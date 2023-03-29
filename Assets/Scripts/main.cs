@@ -36,7 +36,22 @@ public class main : MonoBehaviour
         gridPositions[piece.getBoardX(), piece.getBoardY()] = obj;
     }
 
+    public void setPositionEmpty(int x, int y)
+    {
+        gridPositions[x,y] = null;
+    }
 
+    public GameObject GetPosition(int x, int y)
+    {
+        return gridPositions[x,y];
+    }
+
+    public bool positionOnBoard(int x, int y)
+    {
+        if(x < 0 || y < 0 || x >= gridPositions.GetLength(0) || y >= gridPositions.GetLength(1)) return false;
+            return true;
+        
+    }
 
     //Trying to write functions to make the instantiating section easier to look at, no luck so far
     void spawnWhitePawns()
