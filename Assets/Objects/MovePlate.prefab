@@ -32,7 +32,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &614505609846194630
 SpriteRenderer:
@@ -99,6 +99,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controller: {fileID: 0}
+  moveAudio: {fileID: 8300000, guid: d7fe745e20c9887438c6ae087ad68eaf, type: 3}
+  attackAudio: {fileID: 8300000, guid: c0fb695a590eb6c46a45ea4279779a6e, type: 3}
+  enPassant: 0
   attacking: 0
 --- !u!61 &-5007117534036838878
 BoxCollider2D:

@@ -4,10 +4,13 @@ using UnityEngine;
 
 public class moveIndicator : MonoBehaviour
 {
+    [SerializeField] private GameObject audioManager;                           // AudioManager reference
+
     //Reference to the boardController
     public GameObject controller;
 
-
+    private audioManager audioManagerComponent;
+    private AudioSource tempAudio;
 
     //Initializing the reference to the currently selected piece
     GameObject pieceReference = null;
@@ -22,6 +25,13 @@ public class moveIndicator : MonoBehaviour
     
     //true indicates the piece is taking another
     public bool attacking = false;
+
+    //Start func
+    void Awake()
+    {
+        audioManager = GameObject.FindGameObjectWithTag("AudioManager");
+        audioManagerComponent = audioManager.GetComponent<audioManager>();
+    }
 
 
     //Initialization func
@@ -58,6 +68,8 @@ public class moveIndicator : MonoBehaviour
                 if(piece.name == "whiteKing") controller.GetComponent<main>().winner("black");
                 if(piece.name == "blackKing") controller.GetComponent<main>().winner("white");
                 Destroy(piece);
+                tempAudio = audioManagerComponent.returnAudio("attackSound");
+			    tempAudio.Play();
             }
 
             //En-passant logic for both teams 
@@ -65,12 +77,15 @@ public class moveIndicator : MonoBehaviour
             {
                 GameObject piece = controller.GetComponent<main>().GetPosition(boardMatrixX, boardMatrixY + 1);
                 Destroy(piece);
-
+                tempAudio = audioManagerComponent.returnAudio("attackSound");
+			    tempAudio.Play();
             }
             else if (enPassant == true && pieceReference.name == "whitePawn")
             {
                 GameObject piece = controller.GetComponent<main>().GetPosition(boardMatrixX, boardMatrixY - 1);
                 Destroy(piece);
+                tempAudio = audioManagerComponent.returnAudio("attackSound");
+			    tempAudio.Play();
             }
             
 
@@ -93,11 +108,18 @@ public class moveIndicator : MonoBehaviour
         //Setting the player to the one that was not playing previously
         controller.GetComponent<main>().nextTurn();
 
+        if(!attacking)
+        {
+                tempAudio = audioManagerComponent.returnAudio("moveSound");
+			    tempAudio.Play();
+        }
         //Removing the movement indicators 
         pieceReference.GetComponent<chessPiece>().destroyMoveIndicators();
 
         //Setting has moved to true
         pieceReference.GetComponent<chessPiece>().setHasMoved(true);
+
+
         
     }
 
