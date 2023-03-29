@@ -4,8 +4,12 @@ using UnityEngine;
 
 public class moveIndicator : MonoBehaviour
 {
+    //Reference to the boardController
     public GameObject controller;
 
+
+
+    //Initializing the reference to the currently selected piece
     GameObject pieceReference = null;
 
 
@@ -23,6 +27,7 @@ public class moveIndicator : MonoBehaviour
         //If the players move is classified as an attack, highlight the move plate with red instead of the default
         if (attacking)
         {
+            Debug.Log("win");
             gameObject.GetComponent<SpriteRenderer>().color = new Color(1.0f, 0.0f, 0.0f, 1.0f);
         }
     }
@@ -51,20 +56,25 @@ public class moveIndicator : MonoBehaviour
 
         controller.GetComponent<main>().setPosition(pieceReference);
 
-        pieceReference.GetComponent<chessPiece>().DestroyMovePlates();
+        //Removing the movement indicators 
+        pieceReference.GetComponent<chessPiece>().destroyMoveIndicators();
     }
 
+
+    //Setting the boardMatrix variables
     public void setCoordinates(int x, int y)
     {
         boardMatrixX = x;
         boardMatrixY = y;
     }
 
+    //Setting the reference to the piece that has been selected
     public void setPieceReference(GameObject obj)
     {
         pieceReference = obj;
     }
 
+    //Returning a reference to the currently selected piece
     public GameObject GetReference()
     {
         return pieceReference;

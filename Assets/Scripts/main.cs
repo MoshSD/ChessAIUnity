@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class main : MonoBehaviour
 {
@@ -50,7 +51,6 @@ public class main : MonoBehaviour
     {
         if(x < 0 || y < 0 || x >= gridPositions.GetLength(0) || y >= gridPositions.GetLength(1)) return false;
             return true;
-        
     }
 
     //Trying to write functions to make the instantiating section easier to look at, no luck so far

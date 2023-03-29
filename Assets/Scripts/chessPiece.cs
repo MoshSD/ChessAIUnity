@@ -9,7 +9,7 @@ public class chessPiece : MonoBehaviour
 {
     //Public object references
     public GameObject boardController;
-    public GameObject movePlate;
+    public GameObject moveIndicator;
 
 
     //Private vars for each piece
@@ -56,8 +56,7 @@ public class chessPiece : MonoBehaviour
     }
 
 
-    //FNC for setting board positions 
-
+    //FNC for setting board positions============================
     public void setBoardX(int x)
     {
         boardX = x;
@@ -71,8 +70,220 @@ public class chessPiece : MonoBehaviour
         boardX = x;
         boardY = y;
     }
+    //===========================================================
+
+    //Func for spawning the movement indicators for each piece                      +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
+    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY)
+    {
+        //Setting internal vars to the board positions of the indicator
+        float x = boardMatrixX;
+        float y = boardMatrixY;
+
+        //Offsetting from unity worldspace to actual boardspace
+        x *= boardOffsetA;
+        y *= boardOffsetA;
+        x += boardOffsetB;
+        y += boardOffsetB;
+
+        //Instantiating the movement indicator object (spawning it)
+        GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
+        moveIndicator miScript = mi.GetComponent<moveIndicator>();
+        miScript.setPieceReference(gameObject);
+        miScript.setCoordinates(boardMatrixX, boardMatrixY);
+        miScript.Initialize();
+    }
+
+    //Func for spawning the attack movement indicators for each piece                 
+    public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY)
+    {
+        //Setting internal vars to the board positions of the indicator
+        float x = boardMatrixX;
+        float y = boardMatrixY;
+
+        //Offsetting from unity worldspace to actual boardspace
+        x *= boardOffsetA;
+        y *= boardOffsetA;
+        x += boardOffsetB;
+        y += boardOffsetB;
+
+        //Instantiating the movement indicator object (spawning it)
+        GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
+        moveIndicator miScript = mi.GetComponent<moveIndicator>();
+        //Only differing line of code from the movement script - optimisation could include new parameter that specifies if attacking or not
+        miScript.attacking = true;
+        miScript.setPieceReference(gameObject);
+        miScript.setCoordinates(boardMatrixX, boardMatrixY);
+        miScript.Initialize();
+    }
+
+    //Movement indicator spawn logic for individual or miscellanious movement such as "en-passante" or knight movement, these movement types follow no patten so it is easier to use this standardised method
+    public void pointMoveIndicator(int x, int y)
+    {
+        main sc = boardController.GetComponent<main>();
+        if(sc.positionOnBoard(x, y))
+        {
+            GameObject cp = sc.GetPosition(x, y);
+            if(cp == null)
+            {
+                moveIndicatorSpawn(x, y);
+            } else if (cp.GetComponent<chessPiece>().team != team)
+            {
+                moveIndicatorAttackSpawn(x, y);
+            }
+        }
+    }
+
+    //Movement indicator spawn logic for queens and rooks - Cardinal movement
+    public void lineMoveIndicator(int incrementX, int incrementY)
+    {
+        //Adding the increment in the desired cardinal direction
+        main sc = boardController.GetComponent<main>();
+        int x = boardX + incrementX;
+        int y = boardY + incrementY;
+
+        //Looping through all of the spaces along the chosen direction, checking if they do not contain any pieces, if no pieces are detected, spawn an indicator and increment further
+        while (sc.positionOnBoard(x,y) && sc.GetPosition(x,y) == null)
+        {
+            moveIndicatorSpawn(x, y);
+            x += incrementX;
+            y += incrementY;
+        } 
+
+        //If the team of the piece that has been encountered by the indicator spawner is of an opposing team, must show the attack indicator instead
+        if (sc.positionOnBoard(x, y) && sc.GetPosition(x, y).GetComponent<chessPiece>().team != team)
+        {
+            moveIndicatorAttackSpawn(x, y);
+        }
+    }
+
+    //Movement indicator spawn logic for the knights
+    public void knightMoveIndicator()
+    {
+        // All of the possible movement positions for the knights
+        pointMoveIndicator(boardX + 1, boardY + 2);
+        pointMoveIndicator(boardX - 1, boardY + 2);
+        pointMoveIndicator(boardX + 2, boardY + 2);
+        pointMoveIndicator(boardX + 2, boardY - 1);
+        pointMoveIndicator(boardX + 1, boardY - 2);
+        pointMoveIndicator(boardX - 1, boardY - 2);
+        pointMoveIndicator(boardX - 1, boardY + 1);
+        pointMoveIndicator(boardX + 2, boardY - 1);
+    }
+
+    //Movement indicator spawn logic for the kings movement
+    public void kingMoveIndicator()
+    {
+        pointMoveIndicator(boardX, boardY - 1);
+        pointMoveIndicator(boardX, boardY + 1);
+        pointMoveIndicator(boardX - 1, boardY - 1);
+        pointMoveIndicator(boardX - 1, boardY);
+        pointMoveIndicator(boardX - 1, boardY + 1);
+        pointMoveIndicator(boardX + 1, boardY - 1);
+        pointMoveIndicator(boardX + 1, boardY);
+        pointMoveIndicator(boardX + 1, boardY + 1);
+
+    }
+
+    //Movement indicator spawn logic for the pawns 
+    public void pawnMoveIndicator(int x, int y)
+    {
+        //Is position valid or not
+        main sc = boardController.GetComponent<main>();
+        if(sc.positionOnBoard(x, y))
+        {
+            if(sc.GetPosition(x, y) == null)
+            {
+                moveIndicatorSpawn(x, y);
+            }
+
+            //Checking whether there are pieces in range of the pawns attack, one forward + to the left, and one forward + to the right
+            if(sc.positionOnBoard(x + 1, y) && sc.GetPosition(x + 1, y) != null && sc.GetPosition(x + 1, y).GetComponent<chessPiece>().team != team)
+            {
+                moveIndicatorAttackSpawn(x + 1, y);
+            }
+            if(sc.positionOnBoard(x - 1, y) && sc.GetPosition(x - 1, y) != null && sc.GetPosition(x - 1, y).GetComponent<chessPiece>().team != team)
+            {
+                moveIndicatorAttackSpawn(x - 1, y);
+            }
+        }
+
+    }
 
 
+    //Func to indicate which spaces each piece can move to.
+    public void initiateMoveIndicators()
+    {
+        switch(this.name)
+        {
+            //Black queen and white queen can move in all directions (8)
+            case "blackQueen":
+            case "whiteQueen":
+                lineMoveIndicator(1,0);
+                lineMoveIndicator(0,1);
+                lineMoveIndicator(1,1);
+                lineMoveIndicator(-1,0);
+                lineMoveIndicator(-1,-1);
+                lineMoveIndicator(-1,1);
+                lineMoveIndicator(1,-1);
+                lineMoveIndicator(0,-1);
+                break;
+            //Knights can only move with their specificly set move of 2 "forward" and then 1 after a right angle - or the inverse of this
+            case "blackKnight":
+            case "whiteKnight":
+                knightMoveIndicator();
+                break;
+            //Bishops can move on diagonals, for a total of four different directions
+            case "blackBishop":
+            case "whiteBishop":
+                lineMoveIndicator(1,1);
+                lineMoveIndicator(1,-1);
+                lineMoveIndicator(-1,1);
+                lineMoveIndicator(-1,-1);
+                break;
+            //The kings have a specific type of move, one where they are only able to move by one square in each direction + potential for castling
+            case "blackKing":
+            case "whiteKing":
+                kingMoveIndicator();
+                break;
+            //The rooks can move in the 4 cardinal directions only
+            case "blackRook":
+            case "whiteRook":
+                lineMoveIndicator(1,0);
+                lineMoveIndicator(0,1);
+                lineMoveIndicator(-1,0);
+                lineMoveIndicator(0,-1);
+                break;
+            //Pawns from different teams move in one direction only, the black pawn moving towards negative Y and the white pawns moving towards positive Y
+            case "blackPawn":
+                pawnMoveIndicator(boardX, boardY - 1);
+                break;
+            case "whitePawn":
+                pawnMoveIndicator(boardX, boardY + 1);
+                break;
+                
+        }
+    }
+
+
+    //Looping through all of the gameObjects in the scene with the tag "MoveIndicator" and destorying them from the scene
+    public void destroyMoveIndicators()
+    {
+        GameObject[] moveIndicators = GameObject.FindGameObjectsWithTag("MoveIndicator");
+        for (int i = 0; i < moveIndicators.Length; i++)
+        {
+            Destroy(moveIndicators[i]);
+        }
+    }
+
+    //When a piece is clicked, display the movement indicators and destroy the previous ones
+    private void OnMouseUp()
+    {
+        destroyMoveIndicators();
+        initiateMoveIndicators();
+    }
+
+
+    //Init of the piece - What sprite it may have along with its name and other information
     public void Initialize()
     {
         boardController = GameObject.FindGameObjectWithTag("GameController");
@@ -80,19 +291,19 @@ public class chessPiece : MonoBehaviour
         //Switch statement to set the sprite of the piece  NEED TO FIND WAY TO CLEAN THIS CODE AND MAKE FUNC WITH PARAM ("PIECENAME") or something similar to optimise
         switch(this.name)
         {
-            case "blackKing" : this.GetComponent<SpriteRenderer>().sprite = blackKing; break;
-            case "blackQueen" : this.GetComponent<SpriteRenderer>().sprite = blackQueen; break;
-            case "blackBishop" : this.GetComponent<SpriteRenderer>().sprite = blackBishop; break;
-            case "blackKnight" : this.GetComponent<SpriteRenderer>().sprite = blackKnight; break;
-            case "blackRook" : this.GetComponent<SpriteRenderer>().sprite = blackRook; break;
-            case "blackPawn" : this.GetComponent<SpriteRenderer>().sprite = blackPawn; break;
+            case "blackKing" : this.GetComponent<SpriteRenderer>().sprite = blackKing; team = "black"; break;
+            case "blackQueen" : this.GetComponent<SpriteRenderer>().sprite = blackQueen; team = "black"; break;
+            case "blackBishop" : this.GetComponent<SpriteRenderer>().sprite = blackBishop; team = "black"; break;
+            case "blackKnight" : this.GetComponent<SpriteRenderer>().sprite = blackKnight; team = "black"; break;
+            case "blackRook" : this.GetComponent<SpriteRenderer>().sprite = blackRook; team = "black"; break;
+            case "blackPawn" : this.GetComponent<SpriteRenderer>().sprite = blackPawn; team = "black"; break;
 
-            case "whiteKing" : this.GetComponent<SpriteRenderer>().sprite = whiteKing; break;
-            case "whiteQueen" : this.GetComponent<SpriteRenderer>().sprite = whiteQueen; break;
-            case "whiteBishop" : this.GetComponent<SpriteRenderer>().sprite = whiteBishop; break;
-            case "whiteKnight" : this.GetComponent<SpriteRenderer>().sprite = whiteKnight; break;
-            case "whiteRook" : this.GetComponent<SpriteRenderer>().sprite = whiteRook; break;
-            case "whitePawn" : this.GetComponent<SpriteRenderer>().sprite = whitePawn; break;
+            case "whiteKing" : this.GetComponent<SpriteRenderer>().sprite = whiteKing; team = "white"; break;
+            case "whiteQueen" : this.GetComponent<SpriteRenderer>().sprite = whiteQueen; team = "white"; break;
+            case "whiteBishop" : this.GetComponent<SpriteRenderer>().sprite = whiteBishop; team = "white"; break;
+            case "whiteKnight" : this.GetComponent<SpriteRenderer>().sprite = whiteKnight; team = "white"; break;
+            case "whiteRook" : this.GetComponent<SpriteRenderer>().sprite = whiteRook; team = "white"; break;
+            case "whitePawn" : this.GetComponent<SpriteRenderer>().sprite = whitePawn; team = "white"; break;
         }
 
         //using the coordinate offset function

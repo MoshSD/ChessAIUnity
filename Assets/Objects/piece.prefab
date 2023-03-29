@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8614519118051644534}
   - component: {fileID: 9028954899377733439}
   - component: {fileID: 3326309226002229513}
+  - component: {fileID: 5640889073768071125}
   m_Layer: 0
   m_Name: piece
   m_TagString: Untagged
@@ -31,7 +32,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &9028954899377733439
 SpriteRenderer:
@@ -98,7 +99,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boardController: {fileID: 0}
-  movePlate: {fileID: 0}
+  moveIndicator: {fileID: 614505609846194629, guid: c2f74f54998d4344c8477d60293a0404, type: 3}
   whiteKing: {fileID: 21300000, guid: d202c13f18899c649bbb1780d5f2e46f, type: 3}
   whiteQueen: {fileID: 21300000, guid: 229730db262f0a7468131aa55892b8af, type: 3}
   whiteBishop: {fileID: 21300000, guid: 52cb4c331e104f44ab8d8c8a163fbb8d, type: 3}
@@ -111,3 +112,29 @@ MonoBehaviour:
   blackKnight: {fileID: 21300000, guid: 3e79c4084a476e8448acde8d55c7d876, type: 3}
   blackRook: {fileID: 21300000, guid: 3d8239b8a6bd80545849c6c7b961794e, type: 3}
   blackPawn: {fileID: 21300000, guid: 60a5fd8a92f8b0f42998876ea18ef25d, type: 3}
+--- !u!61 &5640889073768071125
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4596072085347191480}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.2, y: 0.2}
+    newSize: {x: 0.2, y: 0.2}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 0.2, y: 0.2}
+  m_EdgeRadius: 0
