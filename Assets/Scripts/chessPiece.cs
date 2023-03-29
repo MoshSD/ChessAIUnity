@@ -21,6 +21,9 @@ public class chessPiece : MonoBehaviour
     private const float boardOffsetA = 0.66f;
     private const float boardOffsetB = -2.3f;
 
+    //Var that will be used for initial pawn movement as well as castling
+    private bool hasMoved = false;
+
 
     public Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
     public Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -37,6 +40,12 @@ public class chessPiece : MonoBehaviour
         y += boardOffsetB;
 
         this.transform.position = new Vector3(x,y, -1);
+    }
+
+    //Function for external scripts to change whether the piece has moved or not
+    public void setHasMoved(bool moved)
+    {
+        hasMoved = moved;
     }
 
 
@@ -194,6 +203,16 @@ public class chessPiece : MonoBehaviour
             if(sc.GetPosition(x, y) == null)
             {
                 moveIndicatorSpawn(x, y);
+            }
+
+            //If the pawn has not moved, they are able to go two spaces forward instead of one
+            if(this.name == "blackPawn" && hasMoved == false && sc.GetPosition(x, y - 1) == null)
+            {
+                moveIndicatorSpawn(x, y - 1);
+            }
+            else if(this.name == "whitePawn" && hasMoved == false && sc.GetPosition(x, y + 1) == null)
+            {
+                moveIndicatorSpawn(x,y + 1);
             }
 
             //Checking whether there are pieces in range of the pawns attack, one forward + to the left, and one forward + to the right

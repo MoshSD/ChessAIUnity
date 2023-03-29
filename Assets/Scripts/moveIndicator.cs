@@ -67,6 +67,10 @@ public class moveIndicator : MonoBehaviour
 
         //Removing the movement indicators 
         pieceReference.GetComponent<chessPiece>().destroyMoveIndicators();
+
+        //Setting has moved to true
+        pieceReference.GetComponent<chessPiece>().setHasMoved(true);
+        
     }
 
 
