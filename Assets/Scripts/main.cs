@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class main : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public class main : MonoBehaviour
 
 
     //setting current player and gamestate values
-    private string currentPlayer = "white";
+    private string currentTeam = "white";
     private bool gameFinished = false;
 
     public GameObject spawnPiece(string name, int x, int y)
@@ -46,6 +47,54 @@ public class main : MonoBehaviour
     {
         return gridPositions[x,y];
     }
+
+
+    //Returning the team that is currently playing
+    public string getCurrentTeam()
+    {
+        return currentTeam;
+    }
+
+    //Returning the game finished state
+    public bool isGameOver()
+    {
+        return gameFinished;
+    }
+
+    //Changing which team gets to move based on whomevers turn it is
+    public void nextTurn()
+    {
+        if(currentTeam == "white")
+        {
+            currentTeam = "black";
+        }
+        else
+        {
+            currentTeam = "white";
+        }
+    }
+
+    //Check for whether the game has finished or not
+    public void Update()
+    {
+        if(gameFinished == true && Input.GetMouseButtonDown(0))
+        {
+            gameFinished = false;
+
+            SceneManager.LoadScene("main");
+        }
+    }
+
+    //Setting the text renderers to correctly display gamestate
+    public void winner(string playerWinner)
+    {
+        Debug.Log("hooray");
+        gameFinished = true;
+        GameObject.FindGameObjectWithTag("WinnerText").GetComponent<TMPro.TextMeshProUGUI>().enabled = true;
+        GameObject.FindGameObjectWithTag("WinnerText").GetComponent<TMPro.TextMeshProUGUI>().text = playerWinner + " Wins!";
+        GameObject.FindGameObjectWithTag("RestartText").GetComponent<TMPro.TextMeshProUGUI>().enabled = true;
+    }
+
 
     public bool positionOnBoard(int x, int y)
     {

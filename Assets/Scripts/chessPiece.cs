@@ -278,8 +278,12 @@ public class chessPiece : MonoBehaviour
     //When a piece is clicked, display the movement indicators and destroy the previous ones
     private void OnMouseUp()
     {
-        destroyMoveIndicators();
-        initiateMoveIndicators();
+        //Is the piece that has been clicked on a part of the team that is currently playing?
+        if(!boardController.GetComponent<main>().isGameOver() && boardController.GetComponent<main>().getCurrentTeam() == team)
+        {
+            destroyMoveIndicators();
+            initiateMoveIndicators();
+        }
     }
 
 

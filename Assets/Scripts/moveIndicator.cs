@@ -42,6 +42,12 @@ public class moveIndicator : MonoBehaviour
         if(attacking)
         {
             GameObject piece = controller.GetComponent<main>().GetPosition(boardMatrixX, boardMatrixY);
+
+            //If the kings pieces are taken - End the game
+            if(piece.name == "whiteKing") controller.GetComponent<main>().winner("black");
+            if(piece.name == "blackKing") controller.GetComponent<main>().winner("white");
+            
+            
             Destroy(piece);
         }
 
@@ -55,6 +61,9 @@ public class moveIndicator : MonoBehaviour
         pieceReference.GetComponent<chessPiece>().setCoordinates();
 
         controller.GetComponent<main>().setPosition(pieceReference);
+
+        //Setting the player to the one that was not playing previously
+        controller.GetComponent<main>().nextTurn();
 
         //Removing the movement indicators 
         pieceReference.GetComponent<chessPiece>().destroyMoveIndicators();
