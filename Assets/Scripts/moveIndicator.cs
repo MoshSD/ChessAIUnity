@@ -52,7 +52,6 @@ public class moveIndicator : MonoBehaviour
         {
             if(enPassant == false)
             {
-                Debug.Log("not enpassant");
                 GameObject piece = controller.GetComponent<main>().GetPosition(boardMatrixX, boardMatrixY);
 
                 //If the kings pieces are taken - End the game
