@@ -24,6 +24,9 @@ public class chessPiece : MonoBehaviour
     //Var that will be used for initial pawn movement as well as castling
     private bool hasMoved = false;
 
+    //Used for implementing en-passant - check for whether the pawn last moved two spaces
+    private bool lastMoveWasDouble = false;
+
 
     public Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
     public Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -46,6 +49,13 @@ public class chessPiece : MonoBehaviour
     public void setHasMoved(bool moved)
     {
         hasMoved = moved;
+    }
+
+
+    //Determining whether the last move was double -- accessible publicly
+    public void setHasMovedDouble(bool move)
+    {
+        lastMoveWasDouble = move;
     }
 
 
@@ -82,7 +92,7 @@ public class chessPiece : MonoBehaviour
     //===========================================================
 
     //Func for spawning the movement indicators for each piece                      +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
-    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY)
+    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false)
     {
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
@@ -99,11 +109,12 @@ public class chessPiece : MonoBehaviour
         moveIndicator miScript = mi.GetComponent<moveIndicator>();
         miScript.setPieceReference(gameObject);
         miScript.setCoordinates(boardMatrixX, boardMatrixY);
+        miScript.setDoubleMove(isMoveDouble);
         miScript.Initialize();
     }
 
     //Func for spawning the attack movement indicators for each piece                 
-    public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY)
+    public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY, bool enPassant = false)
     {
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
@@ -120,6 +131,7 @@ public class chessPiece : MonoBehaviour
         moveIndicator miScript = mi.GetComponent<moveIndicator>();
         //Only differing line of code from the movement script - optimisation could include new parameter that specifies if attacking or not
         miScript.attacking = true;
+        miScript.enPassant = enPassant;
         miScript.setPieceReference(gameObject);
         miScript.setCoordinates(boardMatrixX, boardMatrixY);
         miScript.Initialize();
@@ -169,14 +181,14 @@ public class chessPiece : MonoBehaviour
     public void knightMoveIndicator()
     {
         // All of the possible movement positions for the knights
-        pointMoveIndicator(boardX + 1, boardY + 2);
-        pointMoveIndicator(boardX - 1, boardY + 2);
-        pointMoveIndicator(boardX + 2, boardY + 2);
+        pointMoveIndicator(boardX + 2, boardY + 1);
         pointMoveIndicator(boardX + 2, boardY - 1);
         pointMoveIndicator(boardX + 1, boardY - 2);
         pointMoveIndicator(boardX - 1, boardY - 2);
-        pointMoveIndicator(boardX - 1, boardY + 1);
-        pointMoveIndicator(boardX + 2, boardY - 1);
+        pointMoveIndicator(boardX - 2, boardY - 1);
+        pointMoveIndicator(boardX - 2, boardY + 1);
+        pointMoveIndicator(boardX - 1, boardY + 2);
+        pointMoveIndicator(boardX + 1, boardY + 2);
     }
 
     //Movement indicator spawn logic for the kings movement
@@ -194,7 +206,7 @@ public class chessPiece : MonoBehaviour
     }
 
     //Movement indicator spawn logic for the pawns 
-    public void pawnMoveIndicator(int x, int y)
+    public void pawnMoveIndicator(int x, int y, int selfX, int selfY)
     {
         //Is position valid or not
         main sc = boardController.GetComponent<main>();
@@ -208,11 +220,11 @@ public class chessPiece : MonoBehaviour
             //If the pawn has not moved, they are able to go two spaces forward instead of one
             if(this.name == "blackPawn" && hasMoved == false && sc.GetPosition(x, y - 1) == null)
             {
-                moveIndicatorSpawn(x, y - 1);
+                moveIndicatorSpawn(x, y - 1, true);
             }
             else if(this.name == "whitePawn" && hasMoved == false && sc.GetPosition(x, y + 1) == null)
             {
-                moveIndicatorSpawn(x,y + 1);
+                moveIndicatorSpawn(x,y + 1, true);
             }
 
             //Checking whether there are pieces in range of the pawns attack, one forward + to the left, and one forward + to the right
@@ -223,6 +235,16 @@ public class chessPiece : MonoBehaviour
             if(sc.positionOnBoard(x - 1, y) && sc.GetPosition(x - 1, y) != null && sc.GetPosition(x - 1, y).GetComponent<chessPiece>().team != team)
             {
                 moveIndicatorAttackSpawn(x - 1, y);
+            }
+
+            //Checking whether the pawn can perform an en-passant in either attack directions
+            if(sc.positionOnBoard(selfX - 1, selfY) && sc.GetPosition(selfX - 1, selfY) != null && sc.GetPosition(selfX - 1, selfY).GetComponent<chessPiece>().team != team && sc.GetPosition(selfX - 1, selfY).GetComponent<chessPiece>().lastMoveWasDouble == true)
+            {
+                moveIndicatorAttackSpawn(x - 1, y, true);
+            }
+            if(sc.positionOnBoard(selfX + 1, selfY) && sc.GetPosition(selfX + 1, selfY) != null && sc.GetPosition(selfX + 1, selfY).GetComponent<chessPiece>().team != team && sc.GetPosition(selfX + 1, selfY).GetComponent<chessPiece>().lastMoveWasDouble == true)
+            {
+                moveIndicatorAttackSpawn(x + 1, y, true);
             }
         }
 
@@ -274,10 +296,10 @@ public class chessPiece : MonoBehaviour
                 break;
             //Pawns from different teams move in one direction only, the black pawn moving towards negative Y and the white pawns moving towards positive Y
             case "blackPawn":
-                pawnMoveIndicator(boardX, boardY - 1);
+                pawnMoveIndicator(boardX, boardY - 1, this.getBoardX(), this.getBoardY());
                 break;
             case "whitePawn":
-                pawnMoveIndicator(boardX, boardY + 1);
+                pawnMoveIndicator(boardX, boardY + 1, this.getBoardX(), this.getBoardY());
                 break;
                 
         }
