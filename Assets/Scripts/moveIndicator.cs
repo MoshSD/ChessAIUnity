@@ -18,6 +18,8 @@ public class moveIndicator : MonoBehaviour
     private bool pawnDoubleMove = false;    
     //Whether the move square represents a move that is an en-passant
     public bool enPassant = false;
+    //Which side is being castled - if any
+    private string castleSide = "null";
 
     //board position
     int boardMatrixX;
@@ -51,6 +53,11 @@ public class moveIndicator : MonoBehaviour
         pawnDoubleMove = move;
     }
 
+    public void setCastleSide(string castleSideLOCAL)
+    {
+        castleSide = castleSideLOCAL;
+    }
+
 
     //When the player clicks, check if the players current move is and attack - if it is, destroy the piece it is attacking.  Then move the piece that the player has selected
     public void OnMouseUp()
@@ -60,7 +67,7 @@ public class moveIndicator : MonoBehaviour
         //if the player is attacking, destroy the target piece
         if(attacking)
         {
-            if(enPassant == false)
+            if(enPassant == false && castleSide == "null")
             {
                 GameObject piece = controller.GetComponent<main>().GetPosition(boardMatrixX, boardMatrixY);
 
@@ -95,15 +102,40 @@ public class moveIndicator : MonoBehaviour
         controller.GetComponent<main>().setPositionEmpty(pieceReference.GetComponent<chessPiece>().getBoardX(),
             pieceReference.GetComponent<chessPiece>().getBoardY());
 
+        if (!enPassant && castleSide == "kingSide")
+        {
+            Debug.Log("initiating kingside castle");
+            //Kingside castling logic
+            GameObject rookRef = controller.GetComponent<main>().GetPosition(7, boardMatrixY); 
+            controller.GetComponent<main>().setPositionEmpty(rookRef.GetComponent<chessPiece>().getBoardX(),
+            rookRef.GetComponent<chessPiece>().getBoardY());  
+            Debug.Log(boardMatrixX + 1);
+            rookRef.GetComponent<chessPiece>().setBoardX(boardMatrixX - 1);
+            rookRef.GetComponent<chessPiece>().setBoardY(boardMatrixY);
+            rookRef.GetComponent<chessPiece>().setCoordinates();   
+            controller.GetComponent<main>().setPosition(rookRef);
+        }
+        else if(!enPassant && castleSide == "queenSide")
+        {
+            //Queenside castling logic
+            GameObject rookRef = controller.GetComponent<main>().GetPosition(0, boardMatrixY);   
+            controller.GetComponent<main>().setPositionEmpty(rookRef.GetComponent<chessPiece>().getBoardX(),
+            rookRef.GetComponent<chessPiece>().getBoardY());  
+            rookRef.GetComponent<chessPiece>().setBoardX(boardMatrixX + 1);
+            rookRef.GetComponent<chessPiece>().setBoardY(boardMatrixY);
+            rookRef.GetComponent<chessPiece>().setCoordinates();   
+            controller.GetComponent<main>().setPosition(rookRef);
+
+        }
         //Setting the moved pieces new location after the move has occurred
+        Debug.Log(boardMatrixX);
         pieceReference.GetComponent<chessPiece>().setBoardX(boardMatrixX);
         pieceReference.GetComponent<chessPiece>().setBoardY(boardMatrixY);
         pieceReference.GetComponent<chessPiece>().setCoordinates();
+        
+
         //Confirming that the player made a double move (first pawn move is double)
         pieceReference.GetComponent<chessPiece>().setHasMovedDouble(pawnDoubleMove);
-
-
-        
         controller.GetComponent<main>().setPosition(pieceReference);
         //Setting the player to the one that was not playing previously
         controller.GetComponent<main>().nextTurn();

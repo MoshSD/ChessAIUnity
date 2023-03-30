@@ -92,7 +92,7 @@ public class chessPiece : MonoBehaviour
     //===========================================================
 
     //Func for spawning the movement indicators for each piece                      +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
-    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false)
+    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false, string castleSide = "null")
     {
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
@@ -108,7 +108,19 @@ public class chessPiece : MonoBehaviour
         GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
         moveIndicator miScript = mi.GetComponent<moveIndicator>();
         miScript.setPieceReference(gameObject);
-        miScript.setCoordinates(boardMatrixX, boardMatrixY);
+        miScript.setCastleSide(castleSide);
+        if(castleSide == "kingSide")
+        {
+            miScript.setCoordinates(boardMatrixX - 1, boardMatrixY);        
+        }
+        else if(castleSide == "queenSide")
+        {
+            miScript.setCoordinates(boardMatrixX + 2, boardMatrixY);
+        }
+        else
+        {
+            miScript.setCoordinates(boardMatrixX, boardMatrixY);
+        }
         miScript.setDoubleMove(isMoveDouble);
         miScript.Initialize();
     }
@@ -138,18 +150,29 @@ public class chessPiece : MonoBehaviour
     }
 
     //Movement indicator spawn logic for individual or miscellanious movement such as "en-passante" or knight movement, these movement types follow no patten so it is easier to use this standardised method
-    public void pointMoveIndicator(int x, int y)
+    public void pointMoveIndicator(int x, int y, string castleSide = "null")
     {
         main sc = boardController.GetComponent<main>();
-        if(sc.positionOnBoard(x, y))
+        if(castleSide != "null")
         {
-            GameObject cp = sc.GetPosition(x, y);
-            if(cp == null)
+            //Castle move indicator
+            if(sc.positionOnBoard(x,y))
             {
-                moveIndicatorSpawn(x, y);
-            } else if (cp.GetComponent<chessPiece>().team != team)
+                moveIndicatorSpawn(x, y, false, castleSide);
+            }
+        }
+        else
+        {
+            if(sc.positionOnBoard(x, y))
             {
-                moveIndicatorAttackSpawn(x, y);
+                GameObject cp = sc.GetPosition(x, y);
+                if(cp == null)
+                {
+                    moveIndicatorSpawn(x, y);
+                } else if (cp.GetComponent<chessPiece>().team != team)
+                {
+                    moveIndicatorAttackSpawn(x, y);
+                }
             }
         }
     }
@@ -203,6 +226,22 @@ public class chessPiece : MonoBehaviour
         pointMoveIndicator(boardX + 1, boardY);
         pointMoveIndicator(boardX + 1, boardY + 1);
 
+        //Add functionality for castling here
+        main sc = boardController.GetComponent<main>();
+        if(this.hasMoved == false && sc.GetPosition(boardX + 1, boardY) == null && sc.GetPosition(boardX + 2, boardY) == null && sc.GetPosition(boardX + 3, boardY).GetComponent<chessPiece>().hasMoved == false)
+        {
+            //Kingside castle
+            Debug.Log("kingside");
+            pointMoveIndicator(boardX + 3, boardY, "kingSide");
+            Debug.Log(boardX + 3);
+
+        }
+        if(this.hasMoved == false && sc.GetPosition(boardX - 1, boardY) == null && sc.GetPosition(boardX -2, boardY) == null && sc.GetPosition(boardX -3, boardY) == null && sc.GetPosition(boardX - 4, boardY).GetComponent<chessPiece>().hasMoved == false)
+        {
+            //Queenside castle
+            Debug.Log("queenside");
+            pointMoveIndicator(boardX - 4, boardY, "queenSide");
+        }
     }
 
     //Movement indicator spawn logic for the pawns 
