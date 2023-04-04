@@ -21,6 +21,9 @@ public class moveIndicator : MonoBehaviour
     //Which side is being castled - if any
     private string castleSide = "null";
 
+    //Whether the move is a promotion move
+    private bool promotionMove = false;
+
     //board position
     int boardMatrixX;
     int boardMatrixY;
@@ -42,7 +45,6 @@ public class moveIndicator : MonoBehaviour
         //If the players move is classified as an attack, highlight the move plate with red instead of the default
         if (attacking)
         {
-            Debug.Log("win");
             gameObject.GetComponent<SpriteRenderer>().color = new Color(1.0f, 0.0f, 0.0f, 1.0f);
         }
     }
@@ -58,7 +60,12 @@ public class moveIndicator : MonoBehaviour
         castleSide = castleSideLOCAL;
     }
 
-
+    //Externally setting the promotion var
+    public void setPromotionMove(bool move)
+    {
+        promotionMove = move;
+    }
+    
     //When the player clicks, check if the players current move is and attack - if it is, destroy the piece it is attacking.  Then move the piece that the player has selected
     public void OnMouseUp()
     {
@@ -74,7 +81,7 @@ public class moveIndicator : MonoBehaviour
                 //If the kings pieces are taken - End the game
                 if(piece.name == "whiteKing") controller.GetComponent<main>().winner("black");
                 if(piece.name == "blackKing") controller.GetComponent<main>().winner("white");
-                Destroy(piece);
+                Destroy(piece); 
                 tempAudio = audioManagerComponent.returnAudio("attackSound");
 			    tempAudio.Play();
             }
@@ -104,12 +111,10 @@ public class moveIndicator : MonoBehaviour
 
         if (!enPassant && castleSide == "kingSide")
         {
-            Debug.Log("initiating kingside castle");
             //Kingside castling logic
             GameObject rookRef = controller.GetComponent<main>().GetPosition(7, boardMatrixY); 
             controller.GetComponent<main>().setPositionEmpty(rookRef.GetComponent<chessPiece>().getBoardX(),
             rookRef.GetComponent<chessPiece>().getBoardY());  
-            Debug.Log(boardMatrixX + 1);
             rookRef.GetComponent<chessPiece>().setBoardX(boardMatrixX - 1);
             rookRef.GetComponent<chessPiece>().setBoardY(boardMatrixY);
             rookRef.GetComponent<chessPiece>().setCoordinates();   
@@ -127,12 +132,11 @@ public class moveIndicator : MonoBehaviour
             controller.GetComponent<main>().setPosition(rookRef);
 
         }
+        else
         //Setting the moved pieces new location after the move has occurred
-        Debug.Log(boardMatrixX);
         pieceReference.GetComponent<chessPiece>().setBoardX(boardMatrixX);
         pieceReference.GetComponent<chessPiece>().setBoardY(boardMatrixY);
         pieceReference.GetComponent<chessPiece>().setCoordinates();
-        
 
         //Confirming that the player made a double move (first pawn move is double)
         pieceReference.GetComponent<chessPiece>().setHasMovedDouble(pawnDoubleMove);
@@ -151,7 +155,21 @@ public class moveIndicator : MonoBehaviour
         //Setting has moved to true
         pieceReference.GetComponent<chessPiece>().setHasMoved(true);
 
+        //Promotion move
+        if(promotionMove)
+        {
+            string referenceTeam = pieceReference.GetComponent<chessPiece>().getTeam();
+            Destroy(pieceReference);
 
+            if(referenceTeam == "white")
+            {
+                controller.GetComponent<main>().spawnPiece("whiteQueen", boardMatrixX, boardMatrixY);
+            }
+            else if(referenceTeam == "black")
+            {
+                controller.GetComponent<main>().spawnPiece("blackQueen", boardMatrixX, boardMatrixY);
+            }
+        }
         
     }
 

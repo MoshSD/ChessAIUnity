@@ -58,9 +58,13 @@ public class chessPiece : MonoBehaviour
         lastMoveWasDouble = move;
     }
 
+    public string getTeam()
+    {
+        return(team);
+    }
+
 
     //FNC for getting board positions
-
     public int getBoardX()
     {
         return boardX;
@@ -92,7 +96,7 @@ public class chessPiece : MonoBehaviour
     //===========================================================
 
     //Func for spawning the movement indicators for each piece                      +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
-    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false, string castleSide = "null")
+    public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false, string castleSide = "null", bool promotionMove = false)
     {
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
@@ -122,11 +126,12 @@ public class chessPiece : MonoBehaviour
             miScript.setCoordinates(boardMatrixX, boardMatrixY);
         }
         miScript.setDoubleMove(isMoveDouble);
+        miScript.setPromotionMove(promotionMove);
         miScript.Initialize();
     }
 
     //Func for spawning the attack movement indicators for each piece                 
-    public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY, bool enPassant = false)
+    public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY, bool enPassant = false, bool promotionMove = false)
     {
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
@@ -144,6 +149,7 @@ public class chessPiece : MonoBehaviour
         //Only differing line of code from the movement script - optimisation could include new parameter that specifies if attacking or not
         miScript.attacking = true;
         miScript.enPassant = enPassant;
+        miScript.setPromotionMove(promotionMove);
         miScript.setPieceReference(gameObject);
         miScript.setCoordinates(boardMatrixX, boardMatrixY);
         miScript.Initialize();
@@ -231,15 +237,12 @@ public class chessPiece : MonoBehaviour
         if(this.hasMoved == false && sc.GetPosition(boardX + 1, boardY) == null && sc.GetPosition(boardX + 2, boardY) == null && sc.GetPosition(boardX + 3, boardY).GetComponent<chessPiece>().hasMoved == false)
         {
             //Kingside castle
-            Debug.Log("kingside");
             pointMoveIndicator(boardX + 3, boardY, "kingSide");
-            Debug.Log(boardX + 3);
 
         }
         if(this.hasMoved == false && sc.GetPosition(boardX - 1, boardY) == null && sc.GetPosition(boardX -2, boardY) == null && sc.GetPosition(boardX -3, boardY) == null && sc.GetPosition(boardX - 4, boardY).GetComponent<chessPiece>().hasMoved == false)
         {
             //Queenside castle
-            Debug.Log("queenside");
             pointMoveIndicator(boardX - 4, boardY, "queenSide");
         }
     }
@@ -269,11 +272,33 @@ public class chessPiece : MonoBehaviour
             //Checking whether there are pieces in range of the pawns attack, one forward + to the left, and one forward + to the right
             if(sc.positionOnBoard(x + 1, y) && sc.GetPosition(x + 1, y) != null && sc.GetPosition(x + 1, y).GetComponent<chessPiece>().team != team)
             {
-                moveIndicatorAttackSpawn(x + 1, y);
+                if(y == 7 && this.team == "white")
+                {
+                    moveIndicatorAttackSpawn(x + 1, y, false, true);
+                }
+                else if(y == 0 && this.team == "black")
+                {
+                    moveIndicatorAttackSpawn(x + 1, y, false, true);
+                }
+                else 
+                {
+                    moveIndicatorAttackSpawn(x + 1, y);
+                }
             }
             if(sc.positionOnBoard(x - 1, y) && sc.GetPosition(x - 1, y) != null && sc.GetPosition(x - 1, y).GetComponent<chessPiece>().team != team)
             {
-                moveIndicatorAttackSpawn(x - 1, y);
+                if(y == 7 && this.team == "white")
+                {
+                    moveIndicatorAttackSpawn(x - 1, y, false, true);
+                }
+                else if(y == 0 && this.team == "black")
+                {
+                    moveIndicatorAttackSpawn(x - 1, y, false, true);
+                }
+                else 
+                {
+                    moveIndicatorAttackSpawn(x - 1, y);
+                }
             }
 
             //Checking whether the pawn can perform an en-passant in either attack directions
@@ -284,6 +309,23 @@ public class chessPiece : MonoBehaviour
             if(sc.positionOnBoard(selfX + 1, selfY) && sc.GetPosition(selfX + 1, selfY) != null && sc.GetPosition(selfX + 1, selfY).GetComponent<chessPiece>().team != team && sc.GetPosition(selfX + 1, selfY).GetComponent<chessPiece>().lastMoveWasDouble == true)
             {
                 moveIndicatorAttackSpawn(x + 1, y, true);
+            }
+
+            //Piece promotion
+            if(this.name == "blackPawn" && y == 0)
+            {
+                if(sc.GetPosition(x,y) == null)
+                {
+                    moveIndicatorSpawn(x, y, false, "null", true);
+                }
+
+            }
+            else if (this.name == "whitePawn" && y == 7)
+            {
+                if(sc.GetPosition(x,y) == null)
+                {
+                    moveIndicatorSpawn(x, y, false, "null", true);
+                }
             }
         }
 

@@ -88,7 +88,6 @@ public class main : MonoBehaviour
     //Setting the text renderers to correctly display gamestate
     public void winner(string playerWinner)
     {
-        Debug.Log("hooray");
         gameFinished = true;
         GameObject.FindGameObjectWithTag("WinnerText").GetComponent<TMPro.TextMeshProUGUI>().enabled = true;
         GameObject.FindGameObjectWithTag("WinnerText").GetComponent<TMPro.TextMeshProUGUI>().text = playerWinner + " Wins!";
