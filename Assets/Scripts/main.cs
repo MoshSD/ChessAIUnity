@@ -17,13 +17,26 @@ public class main : MonoBehaviour
 
     //setting current player and gamestate values
     private string currentTeam = "white";
+    private bool whiteToMove = true;    
     private bool gameFinished = false;
+
+    private bool isWhiteAI = true;
+    private bool isBlackAI = false;
 
     public GameObject spawnPiece(string name, int x, int y)
     {
         GameObject obj = Instantiate(chessPiece, new Vector3(0,0,-1), Quaternion.identity);
         chessPiece piece = obj.GetComponent<chessPiece>();
         piece.name = name;
+        piece.tag = name;
+        if (piece.name.Contains("white") && isWhiteAI)
+        {
+            piece.isAiControlled = true;
+        }
+        else if(piece.name.Contains("black") && isBlackAI)
+        {
+            piece.isAiControlled = true;
+        }
         piece.setBoardCoordinates(x,y);
         piece.Initialize();
         return obj;
@@ -55,6 +68,11 @@ public class main : MonoBehaviour
         return currentTeam;
     }
 
+    public bool getWhiteToMove()
+    {
+        return whiteToMove; 
+    }
+
     //Returning the game finished state
     public bool isGameOver()
     {
@@ -67,10 +85,12 @@ public class main : MonoBehaviour
         if(currentTeam == "white")
         {
             currentTeam = "black";
+            whiteToMove = false;
         }
         else
         {
             currentTeam = "white";
+            whiteToMove = true; 
         }
     }
 

@@ -27,6 +27,10 @@ public class chessPiece : MonoBehaviour
     //Used for implementing en-passant - check for whether the pawn last moved two spaces
     private bool lastMoveWasDouble = false;
 
+    //Remove indicators from the A.I controlled team
+    public bool isAiControlled = false;
+
+    private List<int> moves = new List<int>();
 
     public Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
     public Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -102,6 +106,15 @@ public class chessPiece : MonoBehaviour
         float x = boardMatrixX;
         float y = boardMatrixY;
 
+        //Adding to moves array
+        if(isAiControlled)
+        {
+            int tempAddVal = boardMatrixX + 8 * boardMatrixY;
+            moves.Add(tempAddVal);
+            return; 
+        }
+
+
         //Offsetting from unity worldspace to actual boardspace
         x *= boardOffsetA;
         y *= boardOffsetA;
@@ -136,6 +149,14 @@ public class chessPiece : MonoBehaviour
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
         float y = boardMatrixY;
+
+        //Adding to moves array
+        if(isAiControlled)
+        {
+            int tempAddVal = boardMatrixX + 8 * boardMatrixY;
+            moves.Add(tempAddVal);
+            return; 
+        }
 
         //Offsetting from unity worldspace to actual boardspace
         x *= boardOffsetA;
@@ -400,6 +421,16 @@ public class chessPiece : MonoBehaviour
     //When a piece is clicked, display the movement indicators and destroy the previous ones
     private void OnMouseUp()
     {
+        onMouseUpScript();  
+    }
+
+    private void onMouseUpScript()
+    {
+        if(isAiControlled)
+        {
+            moves.Clear();    
+            initiateMoveIndicators();
+        }
         //Is the piece that has been clicked on a part of the team that is currently playing?
         if(!boardController.GetComponent<main>().isGameOver() && boardController.GetComponent<main>().getCurrentTeam() == team)
         {

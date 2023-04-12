@@ -3,7 +3,23 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - RestartText
+  - AudioManager
+  - WinnerText
+  - MoveIndicator
+  - whitePawn
+  - blackPawn
+  - whiteRook
+  - blackRook
+  - whiteKnight
+  - blackKnight
+  - whiteBishop
+  - blackBishop
+  - whiteQueen
+  - blackQueen
+  - whiteKing
+  - blackKing
   layers:
   - Default
   - TransparentFX
