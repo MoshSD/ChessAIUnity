@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class aiController : MonoBehaviour
 {
-    public GameObject boardController = GameObject.FindGameObjectWithTag("GameController");
+    public GameObject[,] gridPositionsCloned = new GameObject[8,8];
+    public GameObject boardController;
     const int pawnValue = 1;
     const int rookValue = 5;
     const int bishopValue = 3;
@@ -31,51 +32,70 @@ public class aiController : MonoBehaviour
     public int countMaterial(string team)
     {
         int material = 0;
-        //Multiple approaches can be used here - will start with finding all with specific tag however this is very inefficient and I will switch at a later date to something more appropriate 
-        //RECOMMENDED OPTIMISATION = PERFORM THIS ON START AND CACHE IT, EVERY TIME A PIECE IS TAKEN MANIPULATE CACHE ACCORDINGLY
-        var clonedGridPositions = (GameObject[])boardController.GetComponent<main>().returnGridPositions().Clone();
+        // Initialize the copied array as C# has no support for copying 2dimensional arrays like this
+        for (int i = 0; i < gridPositionsCloned.GetLength(0); i++)
+        {
+            for (int j = 0; j < gridPositionsCloned.GetLength(1); j++) {
+                gridPositionsCloned[i,j] = boardController.GetComponent<main>().gridPositions[i,j];
+                //Debug.Log(gridPositionsCloned[i, j]);
+            }
+        }
+        //boardController.GetComponent<main>().gridPositions.CopyTo(gridPositionsCopied, 0);
         if(team == "white")
         {
-            foreach(var element in clonedGridPositions)
+            foreach(var element in gridPositionsCloned)
             {
-                string tempName = element.name;
-                        switch(tempName)
+                if(element != null)
                 {
-                    case "whiteKing" : material += kingValue; break;
-                    case "whiteQueen" : material += queenValue; break;
-                    case "whiteBishop" : material += bishopValue; break;
-                    case "whiteKnight" : material += knightValue; break;
-                    case "whiteRook" : material += rookValue; break;
-                    case "whitePawn" : material += pawnValue; break;
+                    string tempName = element.name;
+                    switch(tempName)
+                    {
+                        case "whiteKing" : material += kingValue; break;
+                        case "whiteQueen" : material += queenValue; break;
+                        case "whiteBishop" : material += bishopValue; break;
+                        case "whiteKnight" : material += knightValue; break;
+                        case "whiteRook" : material += rookValue; break;
+                        case "whitePawn" : material += pawnValue; break;
+                    }
                 }
             }
         }
-        else
+        else if(team == "black")
         {
-            foreach(var element in clonedGridPositions)
+            foreach(var element in gridPositionsCloned)
             {
-                string tempName = element.name;
-                        switch(tempName)
+                if(element != null)
                 {
-                    case "blackKing" : material += kingValue; break;
-                    case "blackQueen" : material += queenValue; break;
-                    case "blackBishop" : material += bishopValue; break;
-                    case "blackKnight" : material += knightValue; break;
-                    case "blackRook" : material += rookValue; break;
-                    case "blackPawn" : material += pawnValue; break;
+                    string tempName = element.name;
+                            switch(tempName)
+                    {
+                        case "blackKing" : material += kingValue; break;
+                        case "blackQueen" : material += queenValue; break;
+                        case "blackBishop" : material += bishopValue; break;
+                        case "blackKnight" : material += knightValue; break;
+                        case "blackRook" : material += rookValue; break;
+                        case "blackPawn" : material += pawnValue; break;
+                    }
                 }
             }
-
         }
-
         return material;
     }
 
     public void Initialize()
     {
         boardController = GameObject.FindGameObjectWithTag("GameController");
-    }
+    } 
 
+    // void Update()
+    // {
+    //     for (int i = 0; i < boardController.GetComponent<main>().gridPositions.GetLength(0); i++)
+    //     {
+    //         for (int j = 0; j < boardController.GetComponent<main>().gridPositions.GetLength(1); j++) {
+    //             Debug.Log(boardController.GetComponent<main>().gridPositions[i, j]);
+    //         }
+    //     }
+    // }
 
 
 }

@@ -8,7 +8,7 @@ public class main : MonoBehaviour
 {
     public GameObject chessPiece;
     //Giving the board grid locations for each piece
-    private GameObject[,] gridPositions = new GameObject[8,8];
+    public GameObject[,] gridPositions = new GameObject[8,8];
 
     //setting up arrays to store the different teams pieces
     private GameObject[] playerBlack = new GameObject[16];
@@ -22,11 +22,6 @@ public class main : MonoBehaviour
 
     private bool isWhiteAI = true;
     private bool isBlackAI = false;
-
-    public GameObject returnGridPositions()
-    {
-        return gridPositions;
-    } 
 
     public GameObject spawnPiece(string name, int x, int y)
     {
@@ -173,6 +168,10 @@ public class main : MonoBehaviour
             setPosition(playerWhite[i]);
             setPosition(playerBlack[i]);
         }
+
+        
+        int tempNum = this.GetComponent<aiController>().countMaterial("white");
+        Debug.Log(tempNum);
     }
 
 }
