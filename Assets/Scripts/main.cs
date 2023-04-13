@@ -23,12 +23,19 @@ public class main : MonoBehaviour
     private bool isWhiteAI = true;
     private bool isBlackAI = false;
 
+    public GameObject returnGridPositions()
+    {
+        return gridPositions;
+    } 
+
     public GameObject spawnPiece(string name, int x, int y)
     {
         GameObject obj = Instantiate(chessPiece, new Vector3(0,0,-1), Quaternion.identity);
         chessPiece piece = obj.GetComponent<chessPiece>();
         piece.name = name;
         piece.tag = name;
+
+        //If the piece is controlled by ai, make sure the class is aware
         if (piece.name.Contains("white") && isWhiteAI)
         {
             piece.isAiControlled = true;
@@ -37,6 +44,7 @@ public class main : MonoBehaviour
         {
             piece.isAiControlled = true;
         }
+
         piece.setBoardCoordinates(x,y);
         piece.Initialize();
         return obj;
