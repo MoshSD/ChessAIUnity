@@ -14,12 +14,17 @@ public class main : MonoBehaviour
     private GameObject[] playerBlack = new GameObject[16];
     private GameObject[] playerWhite = new GameObject[16];
 
+    //FILO stack type datastructure for storing pieces
+    private List<GameObject> takenStack = new List<GameObject>();
+    private List<GameObject> promotionStack = new List<GameObject>();
+
+    public List<List<short>> moves = new List<List<short>>();
+
 
     //setting current player and gamestate values
     private string currentTeam = "white";
     private bool whiteToMove = true;    
     private bool gameFinished = false;
-
     private bool isWhiteAI = true;
     private bool isBlackAI = false;
 
@@ -45,7 +50,326 @@ public class main : MonoBehaviour
         return obj;
     }
 
+    //Code for making and unmaking moves - using this encoding table https://www.chessprogramming.org/Encoding_Moves
+    void makeMove(List<short> moveId)
+    {
+        short fromSquare = moveId[0];
+        short toSquare = moveId[1];
+        short promotion = moveId[2];
+        short capture = moveId[3];
+        short special1 = moveId[4];
+        short special2 = moveId[5];
+        
+        //converting the short number into grid positions
+        GameObject fromObj = gridPositions[fromSquare / 8, fromSquare % 8];
+        //Can be null - be careful
+        GameObject toObj = gridPositions[toSquare / 8, toSquare % 8];
 
+        //Quiet move
+        if(promotion + capture + special1 + special2 == 0)
+        {
+            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+        }
+
+        //Double pawn push
+        if(promotion + capture + special1 == 0 && special2 == 1)
+        {
+            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+        }
+
+        //capture
+        if(promotion == 0 && capture == 1 && special1 + special2 == 0)
+        {
+            //Adding the taken piece to the buffer so it can be reversed later
+            takenStack.Add(gridPositions[toSquare / 8, toSquare % 8]);
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+
+            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+        }
+        //castling
+        //Kingside
+        if(promotion + capture == 0 && special1 == 1 && special2 == 0)
+        { 
+            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+            toSquare -= 1;
+            fromSquare += 1;
+            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+        }
+        //Queenside
+        else if(promotion + capture == 0 && special1 + special2 == 2)
+        {
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+
+            toSquare += 2;
+            fromSquare -= 1;
+            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+        }
+        //EP capture
+        else if(promotion == 0 && capture == 1 && special1 == 0 && special2 == 1)
+        {
+            if(toSquare - fromSquare < 0)
+            {
+                //black EP
+                if(toSquare == fromSquare - 7)
+                {
+                    //EP in the square one positive to the black pawn
+                    takenStack.Add(gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8]);
+                    setPositionEmpty((fromSquare + 1) / 8, (fromSquare + 1) % 8);
+
+                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                }
+                else
+                {
+                    //EP in the square one negative to the black pawn
+                    takenStack.Add(gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8]);
+                    setPositionEmpty((fromSquare - 1) / 8, (fromSquare - 1) % 8);
+                    setPositionEmpty(fromSquare / 8, fromSquare % 8);
+
+                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                }
+            }
+            else
+            {
+                //White EP
+                if(toSquare == fromSquare + 7)
+                {
+                    takenStack.Add(gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8]);
+                    setPositionEmpty((fromSquare - 1) / 8, (fromSquare - 1) % 8);
+                    setPositionEmpty(fromSquare / 8, fromSquare % 8);
+
+                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                }
+                else
+                {
+                    takenStack.Add(gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8]);
+                    setPositionEmpty((fromSquare + 1) / 8, (fromSquare + 1) % 8);
+                    setPositionEmpty(fromSquare / 8, fromSquare % 8);
+
+                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                }
+            }
+        }
+        //PROMOTIONS    
+        if(promotion == 1 && capture == 0)
+        {
+            string teamName = "null";
+            //White piece promotion
+            if(toSquare > 55)
+            {
+                teamName = "white";
+            }
+            //Black piece promotion
+            else
+            {
+                teamName = "black";
+            }
+            promotionStack.Add(gridPositions[fromSquare / 8, fromSquare % 8]);
+            setPositionEmpty(fromSquare / 8, fromSquare % 8);            
+            //Knight promotion
+            if(special1 + special2 == 0)
+            {
+                spawnPiece((teamName + "Knight"), toSquare / 8, toSquare % 8);
+            }
+            //Bishop promotion
+            else if(special1 == 0 && special2 == 1)
+            {
+                spawnPiece((teamName + "Bishop"), toSquare / 8, toSquare % 8);                
+            }
+            //Rook promotion
+            else if(special1 == 1 && special2 == 0)
+            {
+                spawnPiece((teamName + "Rook"), toSquare / 8, toSquare % 8);
+            }
+            //Queen promotion
+            else if(special1 + special2 == 2)
+            {
+                spawnPiece((teamName + "Queen"), toSquare / 8, toSquare % 8);
+            }
+        }
+        //CAPTURE PROMOTIONS
+        else if(promotion == 1 && capture == 1)
+        {
+            string teamName = "null";
+            //White piece promotion
+            if(toSquare > 55)
+            {
+                teamName = "white";
+            }
+            //Black piece promotion
+            else
+            {
+                teamName = "black";
+            }
+
+            //Adding pieces to relevant storage stacks
+            takenStack.Add(toObj);
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+            promotionStack.Add(gridPositions[fromSquare / 8, fromSquare % 8]);
+            setPositionEmpty(fromSquare / 8, fromSquare % 8);   
+
+            //Knight promotion
+            if(special1 + special2 == 0)
+            {
+                spawnPiece((teamName + "Knight"), toSquare / 8, toSquare % 8);
+            }
+            //Bishop promotion
+            else if(special1 == 0 && special2 == 1)
+            {
+                spawnPiece((teamName + "Bishop"), toSquare / 8, toSquare % 8);                 
+            }
+            //Rook promotion
+            else if(special1 == 1 && special2 == 0)
+            {
+                spawnPiece((teamName + "Rook"), toSquare / 8, toSquare % 8);
+            }
+            //Queen promotion
+            else if(special1 + special2 == 2)
+            {
+                spawnPiece((teamName + "Queen"), toSquare / 8, toSquare % 8);
+            }
+        }
+    }    
+
+    void unMakeMove(List<short> moveId)
+    {
+        short fromSquare = moveId[0];
+        short toSquare = moveId[1];
+        short promotion = moveId[2];
+        short capture = moveId[3];
+        short special1 = moveId[4];
+        short special2 = moveId[5];
+
+        //fuck my life i dont wanna make this fucking method not one bit
+        //PLEASE REMEMBER IN THE UNMAKE METHOD - TOSQUARE IS THE SQUARE THAT WAS MOVED TO BEFORE, NOW BECOMING THE FROMSQUARE
+
+        //Writing this method is gonna make me go insane (yes == no rn)
+
+        //fromObj is basically now the toObj
+        //converting the short number into grid positions
+        GameObject fromObj = gridPositions[fromSquare / 8, fromSquare % 8];
+        //Can be null - be careful
+        GameObject toObj = gridPositions[toSquare / 8, toSquare % 8];
+
+        //Quiet move
+        if(promotion + capture + special1 + special2 == 0)
+        {
+            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+        }
+
+        //Double pawn push
+        if(promotion + capture + special1 == 0 && special2 == 1)
+        {
+            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+        }
+
+        //capture
+        if(promotion == 0 && capture == 1 && special1 + special2 == 0)
+        {
+            //Adding the taken piece to the buffer so it can be reversed later
+            //Get most recently added item to the taken stack and set it to the toSquare 
+            gridPositions[toSquare / 8, toSquare % 8] = takenStack[^1];
+            takenStack.Remove(takenStack[^1]);      
+            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+        }
+        //castling
+        //Kingside
+        if(promotion + capture == 0 && special1 == 1 && special2 == 0)
+        {
+            //Setting king back to original location
+            gridPositions[fromSquare / 8, fromSquare % 8] = gridPositions[(toSquare - 1) / 8, (toSquare - 1) % 8]; 
+            setPositionEmpty((toSquare - 1) / 8, (toSquare - 1) % 8);
+            
+            //Setting rook back to original location
+            gridPositions[toSquare / 8, toSquare % 8] = gridPositions[(toSquare - 2) / 8, (toSquare - 2) % 8];
+            setPositionEmpty((toSquare - 2) / 8, (toSquare - 2) % 8);
+        }
+        //Queenside
+        else if(promotion + capture == 0 && special1 + special2 == 2)
+        {
+            //Setting king back to original location
+            gridPositions[fromSquare / 8, fromSquare % 8] = gridPositions[(toSquare - 2) / 8, (toSquare - 2) % 8];
+            setPositionEmpty((toSquare - 2) / 8, (toSquare - 2) % 8);
+            
+            //Setting rook back to original location
+            gridPositions[toSquare / 8, toSquare % 8] = gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8];
+            setPositionEmpty((fromSquare - 1) / 8, (fromSquare - 1) % 8);
+        }
+
+        //ENPASSANT REVERSAL - NO IDEA HOW IM GONNA DO THIS
+        else if(promotion == 0 && capture == 1 && special1 == 0 && special2 == 1)
+        {
+            if(toSquare - fromSquare < 0)
+            {
+                //black EP
+                if(toSquare == fromSquare - 7)
+                {
+                    //Taking the pawn off of the stack and replacing it on the board - 
+                    gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8] = takenStack[^1];
+                    takenStack.Remove(takenStack[^1]); 
+
+                    //Moving the attacking pawn back to where it was previously
+                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                }
+                else
+                {
+                    //EP in the square one negative to the black pawn
+                    gridPositions[(fromSquare - 1) / 8, (fromSquare - 1)] = takenStack[^1];
+                    takenStack.Remove(takenStack[^1]);
+                    
+                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                }
+            }
+            else
+            {
+                //White EP
+                if(toSquare == fromSquare + 7)
+                {
+                    gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8] = takenStack[^1];
+                    takenStack.Remove(takenStack[^1]);
+
+                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                }
+                else
+                {
+                    gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8] = takenStack[^1];
+                    takenStack.Remove(takenStack[^1]); 
+
+                    //Moving the attacking pawn back to where it was previously
+                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                }
+            }
+        }
+        //PROMOTIONS    
+        if(promotion == 1 && capture == 0)
+        {
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+            gridPositions[fromSquare / 8, fromSquare % 8] = promotionStack[^1];
+            promotionStack.Remove(promotionStack[^1]);
+        }
+        //CAPTURE PROMOTIONS
+        else if(promotion == 1 && capture == 1)
+        {
+            setPositionEmpty(toSquare / 8, toSquare % 8);
+            gridPositions[fromSquare / 8, fromSquare % 8] = promotionStack[^1];
+            promotionStack.Remove(promotionStack[^1]);
+
+            gridPositions[toSquare / 8, toSquare % 8] = takenStack[^1];
+            takenStack.Remove(takenStack[^1]);
+        }
+    }
 
     //set the positions of the pieces
     public void setPosition(GameObject obj)
@@ -140,9 +464,6 @@ public class main : MonoBehaviour
             spawnPiece("blackPawn", i,6);
         }
     }
-
-
-
     void Start()
     {
         // instantiating the pieces
@@ -169,9 +490,9 @@ public class main : MonoBehaviour
             setPosition(playerBlack[i]);
         }
 
-        
-        int tempNum = this.GetComponent<aiController>().countMaterial("white");
-        Debug.Log(tempNum);
+        //Initialize a.i controller
+        this.GetComponent<aiController>().Initialize();
+
     }
 
 }

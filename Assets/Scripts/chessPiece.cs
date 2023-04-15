@@ -30,7 +30,7 @@ public class chessPiece : MonoBehaviour
     //Remove indicators from the A.I controlled team
     public bool isAiControlled = false;
 
-    private List<int> moves = new List<int>();
+    List<short> currentMove = new List<short>();
 
     public Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
     public Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -102,17 +102,39 @@ public class chessPiece : MonoBehaviour
     //Func for spawning the movement indicators for each piece                      +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
     public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false, string castleSide = "null", bool promotionMove = false)
     {
+        //Adding to moves array
+        if(isAiControlled)
+        {
+            short toVal = (short)((boardMatrixX * 8) + boardMatrixY);
+            short fromVal = (short)((boardX * 8) + boardY); 
+            short promoVal = 0;
+            short attackVal = 0;
+            short special1 = 0;
+            short special2 = 0;
+            if(isMoveDouble){special2 = 1;}
+            if(castleSide == "kingSide"){special1 = 1;}
+            if(castleSide == "queenSide"){special1 = 1; special2 = 1;}
+            //Only does queen promotion as of now but will be improved to include all different types
+            if(promotionMove){promoVal = 1; special1 = 1; special2 = 1;}
+
+            currentMove.Add(fromVal);
+            currentMove.Add(toVal);
+            currentMove.Add(promoVal);
+            currentMove.Add(attackVal);
+            currentMove.Add(special1);
+            currentMove.Add(special2);
+
+            boardController.GetComponent<main>().moves.Add(currentMove);
+
+            return; 
+        }
+
+
+
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
         float y = boardMatrixY;
 
-        //Adding to moves array
-        if(isAiControlled)
-        {
-            int tempAddVal = boardMatrixX + 8 * boardMatrixY;
-            moves.Add(tempAddVal);
-            return; 
-        }
 
 
         //Offsetting from unity worldspace to actual boardspace
@@ -146,6 +168,32 @@ public class chessPiece : MonoBehaviour
     //Func for spawning the attack movement indicators for each piece                 
     public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY, bool enPassant = false, bool promotionMove = false)
     {
+        //Adding to moves array
+        if(isAiControlled)
+        {
+            short toVal = (short)((boardMatrixX * 8) + boardMatrixY);
+            short fromVal = (short)((boardX * 8) + boardY); 
+            short promoVal = 0;
+            short attackVal = 1;
+            short special1 = 0;
+            short special2 = 0;
+            //Only does queen promotion as of now but will be improved to include all different types
+            if(promotionMove){promoVal = 1; special1 = 1; special2 = 1;}
+            if(enPassant){special2 = 1;}
+
+            currentMove.Add(fromVal);
+            currentMove.Add(toVal);
+            currentMove.Add(promoVal);
+            currentMove.Add(attackVal);
+            currentMove.Add(special1);
+            currentMove.Add(special2);
+
+            boardController.GetComponent<main>().moves.Add(currentMove);
+            return; 
+        }
+
+
+        
         //Setting internal vars to the board positions of the indicator
         float x = boardMatrixX;
         float y = boardMatrixY;
@@ -153,8 +201,7 @@ public class chessPiece : MonoBehaviour
         //Adding to moves array
         if(isAiControlled)
         {
-            int tempAddVal = boardMatrixX + 8 * boardMatrixY;
-            moves.Add(tempAddVal);
+            int tempAddVal = boardMatrixX * 8 + boardMatrixY;
             return; 
         }
 
@@ -427,8 +474,7 @@ public class chessPiece : MonoBehaviour
     private void onMouseUpScript()
     {
         if(isAiControlled)
-        {
-            moves.Clear();    
+        {  
             initiateMoveIndicators();
         }
         //Is the piece that has been clicked on a part of the team that is currently playing?

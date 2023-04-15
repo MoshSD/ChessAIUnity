@@ -15,11 +15,6 @@ public class aiController : MonoBehaviour
 
     public bool controllingBlack = true;
 
-    void Start()
-    {
-        Initialize();
-    }
-
     public int evaluate()
     {
         int whiteEval = countMaterial("white");
@@ -32,14 +27,7 @@ public class aiController : MonoBehaviour
     public int countMaterial(string team)
     {
         int material = 0;
-        // Initialize the copied array as C# has no support for copying 2dimensional arrays like this
-        for (int i = 0; i < gridPositionsCloned.GetLength(0); i++)
-        {
-            for (int j = 0; j < gridPositionsCloned.GetLength(1); j++) {
-                gridPositionsCloned[i,j] = boardController.GetComponent<main>().gridPositions[i,j];
-                //Debug.Log(gridPositionsCloned[i, j]);
-            }
-        }
+
         //boardController.GetComponent<main>().gridPositions.CopyTo(gridPositionsCopied, 0);
         if(team == "white")
         {
@@ -85,6 +73,15 @@ public class aiController : MonoBehaviour
     public void Initialize()
     {
         boardController = GameObject.FindGameObjectWithTag("GameController");
+
+        // Initialize the copied array as C# has no support for copying 2dimensional arrays like this
+        for (int i = 0; i < gridPositionsCloned.GetLength(0); i++)
+        {
+            for (int j = 0; j < gridPositionsCloned.GetLength(1); j++) {
+                gridPositionsCloned[i,j] = this.GetComponent<main>().gridPositions[i,j];
+                //Debug.Log(gridPositionsCloned[i, j]);
+            }
+        }
     } 
 
     // void Update()
@@ -97,5 +94,21 @@ public class aiController : MonoBehaviour
     //     }
     // }
 
+    //Giving ai ability to make and unmake moves
+    void makeMove(List<short> moveId)
+    {
+        short fromSquare = moveId[0];
+        short toSquare = moveId[1];
+        short promotion = moveId[2];
+        short capture = moveId[3];
+        short special1 = moveId[4];
+        short special2 = moveId[5];
+
+    }
+
+    void unMakeMove(int moveId)
+    {
+
+    }
 
 }
