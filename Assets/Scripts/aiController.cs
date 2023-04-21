@@ -45,27 +45,17 @@ public class aiController : MonoBehaviour
         
         //Generate moves for CURRENT team
         boardController.GetComponent<main>().generateMoves();
+        List<List<short>> movesInternal = boardController.GetComponent<main>().moves;
 
         //If there are no moves (stalemate) return 0 == draw
-        if(boardController.GetComponent<main>().moves.Count == 0)
+        if (boardController.GetComponent<main>().moves.Count == 0)
         {
             return 0;
         }
-
-        
-
         bestMove = null;
-        //For each move in the stack, play the move
-        foreach(List<short> move in boardController.GetComponent<main>().moves)
+        foreach(List<short> move in movesInternal)
         {
-            Debug.Log("moving from: " + move[0] + " moving to: " + move[1]);
-            Debug.Log(move[3]);
-            Debug.Log("amount of pawn double moves = " + move[5]);
-        }
-
-        foreach(List<short> move in boardController.GetComponent<main>().moves)
-        {
-            List<List<short>> tempMovesList = boardController.GetComponent<main>().moves;
+            //List<List<short>> tempMovesList = boardController.GetComponent<main>().moves;
             //Debug.Log("MAKING A MOVE");
             if(move[3] == 1){Debug.Log("THIS MOVE IS AN ATTACK: " + move[0] + move[1]);}
             boardController.GetComponent<main>().makeMove(move);

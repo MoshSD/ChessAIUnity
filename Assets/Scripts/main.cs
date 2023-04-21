@@ -302,7 +302,7 @@ public class main : MonoBehaviour
         //Double pawn push
         if(promotion + capture + special1 == 0 && special2 == 1)
         {
-            fromObj.GetComponent<chessPiece>().hasMovedDouble = false;
+            toObj.GetComponent<chessPiece>().hasMovedDouble = false;
             gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
             setPositionEmpty(toSquare % 8, toSquare / 8);
         }

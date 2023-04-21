@@ -63,7 +63,7 @@ public class chessPiece : MonoBehaviour
     //Determining whether the last move was double -- accessible publicly
     public void setHasMovedDouble(bool move)
     {
-        lastMoveWasDouble = move;
+        hasMovedDouble = move;
     }
 
     public string getTeam()
