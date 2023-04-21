@@ -29,8 +29,12 @@ public class chessPiece : MonoBehaviour
 
     //Remove indicators from the A.I controlled team
     public bool isAiControlled = false;
+    public bool isPlayerControlled = false;
+    public bool hasMovedDouble = false;
 
     List<short> currentMove = new List<short>();
+
+    public int movesGeneratedForPiece = 0;
 
     public Sprite whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn;
     public Sprite blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn;
@@ -105,18 +109,19 @@ public class chessPiece : MonoBehaviour
         //Adding to moves array
         if(isAiControlled)
         {
-            short toVal = (short)((boardMatrixX * 8) + boardMatrixY);
-            short fromVal = (short)((boardX * 8) + boardY); 
+            short toVal = (short)((boardMatrixY * 8) + boardMatrixX);
+            short fromVal = (short)((boardY * 8) + boardX); 
             short promoVal = 0;
             short attackVal = 0;
             short special1 = 0;
             short special2 = 0;
-            if(isMoveDouble){special2 = 1;}
+            if(isMoveDouble){special2 = 1; Debug.Log("double move has been initialized for moves list");}
             if(castleSide == "kingSide"){special1 = 1;}
             if(castleSide == "queenSide"){special1 = 1; special2 = 1;}
             //Only does queen promotion as of now but will be improved to include all different types
             if(promotionMove){promoVal = 1; special1 = 1; special2 = 1;}
-
+            
+            //Debug.Log(this.name + "moving from: " + fromVal + " to: " + toVal);
             currentMove.Add(fromVal);
             currentMove.Add(toVal);
             currentMove.Add(promoVal);
@@ -125,44 +130,44 @@ public class chessPiece : MonoBehaviour
             currentMove.Add(special2);
 
             boardController.GetComponent<main>().moves.Add(currentMove);
-
-            return; 
         }
 
 
-
-        //Setting internal vars to the board positions of the indicator
-        float x = boardMatrixX;
-        float y = boardMatrixY;
-
-
-
-        //Offsetting from unity worldspace to actual boardspace
-        x *= boardOffsetA;
-        y *= boardOffsetA;
-        x += boardOffsetB;
-        y += boardOffsetB;
-
-        //Instantiating the movement indicator object (spawning it)
-        GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
-        moveIndicator miScript = mi.GetComponent<moveIndicator>();
-        miScript.setPieceReference(gameObject);
-        miScript.setCastleSide(castleSide);
-        if(castleSide == "kingSide")
+        if(isPlayerControlled && boardController.GetComponent<aiController>().aiTurnActive == false)
         {
-            miScript.setCoordinates(boardMatrixX - 1, boardMatrixY);        
+            //Setting internal vars to the board positions of the indicator
+            float x = boardMatrixX;
+            float y = boardMatrixY;
+
+
+
+            //Offsetting from unity worldspace to actual boardspace
+            x *= boardOffsetA;
+            y *= boardOffsetA;
+            x += boardOffsetB;
+            y += boardOffsetB;
+
+            //Instantiating the movement indicator object (spawning it)
+            GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
+            moveIndicator miScript = mi.GetComponent<moveIndicator>();
+            miScript.setPieceReference(gameObject);
+            miScript.setCastleSide(castleSide);
+            if(castleSide == "kingSide")
+            {
+                miScript.setCoordinates(boardMatrixX - 1, boardMatrixY);        
+            }
+            else if(castleSide == "queenSide")
+            {
+                miScript.setCoordinates(boardMatrixX + 2, boardMatrixY);
+            }
+            else
+            {
+                miScript.setCoordinates(boardMatrixX, boardMatrixY);
+            }
+            miScript.setDoubleMove(isMoveDouble);
+            miScript.setPromotionMove(promotionMove);
+            miScript.Initialize();
         }
-        else if(castleSide == "queenSide")
-        {
-            miScript.setCoordinates(boardMatrixX + 2, boardMatrixY);
-        }
-        else
-        {
-            miScript.setCoordinates(boardMatrixX, boardMatrixY);
-        }
-        miScript.setDoubleMove(isMoveDouble);
-        miScript.setPromotionMove(promotionMove);
-        miScript.Initialize();
     }
 
     //Func for spawning the attack movement indicators for each piece                 
@@ -181,6 +186,7 @@ public class chessPiece : MonoBehaviour
             if(promotionMove){promoVal = 1; special1 = 1; special2 = 1;}
             if(enPassant){special2 = 1;}
 
+            //Debug.Log(this.name + "moving from: " + fromVal + " to: " + toVal);
             currentMove.Add(fromVal);
             currentMove.Add(toVal);
             currentMove.Add(promoVal);
@@ -189,38 +195,30 @@ public class chessPiece : MonoBehaviour
             currentMove.Add(special2);
 
             boardController.GetComponent<main>().moves.Add(currentMove);
-            return; 
         }
 
 
-        
-        //Setting internal vars to the board positions of the indicator
-        float x = boardMatrixX;
-        float y = boardMatrixY;
-
-        //Adding to moves array
-        if(isAiControlled)
+        if(isPlayerControlled && boardController.GetComponent<aiController>().aiTurnActive == false)
         {
-            int tempAddVal = boardMatrixX * 8 + boardMatrixY;
-            return; 
+            //Setting internal vars to the board positions of the indicator
+            float x = boardMatrixX;
+            float y = boardMatrixY;
+            //Offsetting from unity worldspace to actual boardspace
+            x *= boardOffsetA;
+            y *= boardOffsetA;
+            x += boardOffsetB;
+            y += boardOffsetB;
+            //Instantiating the movement indicator object (spawning it)
+            GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
+            moveIndicator miScript = mi.GetComponent<moveIndicator>();
+            //Only differing line of code from the movement script - optimisation could include new parameter that specifies if attacking or not
+            miScript.attacking = true;
+            miScript.enPassant = enPassant;
+            miScript.setPromotionMove(promotionMove);
+            miScript.setPieceReference(gameObject);
+            miScript.setCoordinates(boardMatrixX, boardMatrixY);
+            miScript.Initialize();
         }
-
-        //Offsetting from unity worldspace to actual boardspace
-        x *= boardOffsetA;
-        y *= boardOffsetA;
-        x += boardOffsetB;
-        y += boardOffsetB;
-
-        //Instantiating the movement indicator object (spawning it)
-        GameObject mi = Instantiate(moveIndicator, new Vector3(x, y, -3.0f), Quaternion.identity);
-        moveIndicator miScript = mi.GetComponent<moveIndicator>();
-        //Only differing line of code from the movement script - optimisation could include new parameter that specifies if attacking or not
-        miScript.attacking = true;
-        miScript.enPassant = enPassant;
-        miScript.setPromotionMove(promotionMove);
-        miScript.setPieceReference(gameObject);
-        miScript.setCoordinates(boardMatrixX, boardMatrixY);
-        miScript.Initialize();
     }
 
     //Movement indicator spawn logic for individual or miscellanious movement such as "en-passante" or knight movement, these movement types follow no patten so it is easier to use this standardised method
@@ -328,11 +326,11 @@ public class chessPiece : MonoBehaviour
             }
 
             //If the pawn has not moved, they are able to go two spaces forward instead of one
-            if(this.name == "blackPawn" && hasMoved == false && sc.GetPosition(x, y - 1) == null)
+            if(this.name == "blackPawn" && hasMovedDouble == false  && boardController.GetComponent<main>().gridPositions[x, y - 1] == null)
             {
                 moveIndicatorSpawn(x, y - 1, true);
             }
-            else if(this.name == "whitePawn" && hasMoved == false && sc.GetPosition(x, y + 1) == null)
+            else if(this.name == "whitePawn" && hasMovedDouble == false && boardController.GetComponent<main>().gridPositions[x, y + 1] == null)
             {
                 moveIndicatorSpawn(x,y + 1, true);
             }
@@ -342,14 +340,17 @@ public class chessPiece : MonoBehaviour
             {
                 if(y == 7 && this.team == "white")
                 {
+                    Debug.Log("white pawn may attack");
                     moveIndicatorAttackSpawn(x + 1, y, false, true);
                 }
                 else if(y == 0 && this.team == "black")
                 {
+                    Debug.Log("white pawn may attack");
                     moveIndicatorAttackSpawn(x + 1, y, false, true);
                 }
                 else 
                 {
+                    Debug.Log("white pawn may attack");
                     moveIndicatorAttackSpawn(x + 1, y);
                 }
             }
@@ -357,14 +358,17 @@ public class chessPiece : MonoBehaviour
             {
                 if(y == 7 && this.team == "white")
                 {
+                    Debug.Log("pawn may attack");
                     moveIndicatorAttackSpawn(x - 1, y, false, true);
                 }
                 else if(y == 0 && this.team == "black")
                 {
+                    Debug.Log("pawn may attack");
                     moveIndicatorAttackSpawn(x - 1, y, false, true);
                 }
                 else 
                 {
+                    Debug.Log("pawn may attack");
                     moveIndicatorAttackSpawn(x - 1, y);
                 }
             }
@@ -471,15 +475,18 @@ public class chessPiece : MonoBehaviour
         onMouseUpScript();  
     }
 
-    private void onMouseUpScript()
+    public void onMouseUpScript(bool initiatedByAI = false)
     {
-        if(isAiControlled)
+        if(initiatedByAI)
         {  
+            currentMove.Clear();
             initiateMoveIndicators();
+            return;
         }
         //Is the piece that has been clicked on a part of the team that is currently playing?
         if(!boardController.GetComponent<main>().isGameOver() && boardController.GetComponent<main>().getCurrentTeam() == team)
         {
+            Debug.Log("FART FART FART FART FART ");
             destroyMoveIndicators();
             initiateMoveIndicators();
         }

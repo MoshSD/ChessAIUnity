@@ -141,8 +141,6 @@ public class moveIndicator : MonoBehaviour
         //Confirming that the player made a double move (first pawn move is double)
         pieceReference.GetComponent<chessPiece>().setHasMovedDouble(pawnDoubleMove);
         controller.GetComponent<main>().setPosition(pieceReference);
-        //Setting the player to the one that was not playing previously
-        controller.GetComponent<main>().nextTurn();
 
         if(!attacking)
         {
@@ -171,6 +169,9 @@ public class moveIndicator : MonoBehaviour
             }
         }
         
+        //Setting the player to the one that was not playing previously
+        controller.GetComponent<main>().nextTurn(true);
+
     }
 
 

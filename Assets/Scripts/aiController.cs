@@ -1,10 +1,10 @@
-    using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class aiController : MonoBehaviour
 {
-    public GameObject[,] gridPositionsCloned = new GameObject[8,8];
+    //public GameObject[,] gridPositionsCloned = new GameObject[8,8];
     public GameObject boardController;
     const int pawnValue = 1;
     const int rookValue = 5;
@@ -12,16 +12,84 @@ public class aiController : MonoBehaviour
     const int knightValue = 3;
     const int queenValue = 9;
     const int kingValue = 39;
-
     public bool controllingBlack = true;
+    public bool aiTurnActive = false;
+
+    public List<short> bestMove = new List<short>();
+
+    
+
+    int movesMade = 0;
+    int movesUnmade = 0;
 
     public int evaluate()
     {
         int whiteEval = countMaterial("white");
-        int blackEval = countMaterial("Black");
+        int blackEval = countMaterial("black");
+        //Debug.Log("white evaluation: " + whiteEval + " black evaluation: " + blackEval);
         int evaluation = whiteEval - blackEval;
         int perspective = (boardController.GetComponent<main>().getWhiteToMove()) ? 1 : -1;
         return evaluation * perspective;
+    }
+    public int Search (int depth, int alpha, int beta)
+    {
+        if(depth == 0)
+        {
+            Debug.Log("depth is now 0, RETURNING FROM SEARCH FUNC");
+            //Make move here 
+            // Debug.Log("Moves made: " + movesMade);
+            // Debug.Log("Moves unmade: " + movesUnmade);
+            //Debug.Log("Evaluation of best position = " + evaluate());
+            return evaluate();
+        }
+        
+        //Generate moves for CURRENT team
+        boardController.GetComponent<main>().generateMoves();
+
+        //If there are no moves (stalemate) return 0 == draw
+        if(boardController.GetComponent<main>().moves.Count == 0)
+        {
+            return 0;
+        }
+
+        
+
+        bestMove = null;
+        //For each move in the stack, play the move
+        foreach(List<short> move in boardController.GetComponent<main>().moves)
+        {
+            Debug.Log("moving from: " + move[0] + " moving to: " + move[1]);
+            Debug.Log(move[3]);
+            Debug.Log("amount of pawn double moves = " + move[5]);
+        }
+
+        foreach(List<short> move in boardController.GetComponent<main>().moves)
+        {
+            List<List<short>> tempMovesList = boardController.GetComponent<main>().moves;
+            //Debug.Log("MAKING A MOVE");
+            if(move[3] == 1){Debug.Log("THIS MOVE IS AN ATTACK: " + move[0] + move[1]);}
+            boardController.GetComponent<main>().makeMove(move);
+            boardController.GetComponent<main>().nextTurn();
+            movesMade++;
+            int evaluation = -Search(depth - 1, -beta, -alpha);
+            boardController.GetComponent<main>().unMakeMove(move);
+            //boardController.GetComponent<main>().generateMoves();
+            //boardController.GetComponent<main>().nextTurn();
+            movesUnmade++;
+            if(evaluation >= beta)
+            {
+                Debug.Log("pruning");
+                //Prune good move
+                return beta;
+            }
+            if(evaluation > alpha)
+            {
+                Debug.Log("new move is better than previous");
+                alpha = evaluation;
+                bestMove = move;
+            }
+        }
+        return alpha;
     }
 
     public int countMaterial(string team)
@@ -31,7 +99,7 @@ public class aiController : MonoBehaviour
         //boardController.GetComponent<main>().gridPositions.CopyTo(gridPositionsCopied, 0);
         if(team == "white")
         {
-            foreach(var element in gridPositionsCloned)
+            foreach(var element in this.GetComponent<main>().gridPositions)
             {
                 if(element != null)
                 {
@@ -50,12 +118,12 @@ public class aiController : MonoBehaviour
         }
         else if(team == "black")
         {
-            foreach(var element in gridPositionsCloned)
+            foreach(var element in this.GetComponent<main>().gridPositions)
             {
                 if(element != null)
                 {
                     string tempName = element.name;
-                            switch(tempName)
+                    switch(tempName)
                     {
                         case "blackKing" : material += kingValue; break;
                         case "blackQueen" : material += queenValue; break;
@@ -73,42 +141,17 @@ public class aiController : MonoBehaviour
     public void Initialize()
     {
         boardController = GameObject.FindGameObjectWithTag("GameController");
-
-        // Initialize the copied array as C# has no support for copying 2dimensional arrays like this
-        for (int i = 0; i < gridPositionsCloned.GetLength(0); i++)
-        {
-            for (int j = 0; j < gridPositionsCloned.GetLength(1); j++) {
-                gridPositionsCloned[i,j] = this.GetComponent<main>().gridPositions[i,j];
-                //Debug.Log(gridPositionsCloned[i, j]);
-            }
-        }
     } 
 
-    // void Update()
-    // {
-    //     for (int i = 0; i < boardController.GetComponent<main>().gridPositions.GetLength(0); i++)
-    //     {
-    //         for (int j = 0; j < boardController.GetComponent<main>().gridPositions.GetLength(1); j++) {
-    //             Debug.Log(boardController.GetComponent<main>().gridPositions[i, j]);
-    //         }
-    //     }
-    // }
 
-    //Giving ai ability to make and unmake moves
-    void makeMove(List<short> moveId)
+    public void initiateAIMove()
     {
-        short fromSquare = moveId[0];
-        short toSquare = moveId[1];
-        short promotion = moveId[2];
-        short capture = moveId[3];
-        short special1 = moveId[4];
-        short special2 = moveId[5];
-
-    }
-
-    void unMakeMove(int moveId)
-    {
-
+        aiTurnActive = true;
+        Debug.Log("Current white evaluation: " + Search(1,-999999999,999999999));
+        Debug.Log("Finalizing move");
+        boardController.GetComponent<main>().makeMove(bestMove);
+        aiTurnActive = false;
+        boardController.GetComponent<main>().nextTurn();
     }
 
 }

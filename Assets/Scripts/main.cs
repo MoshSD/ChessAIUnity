@@ -19,14 +19,14 @@ public class main : MonoBehaviour
     private List<GameObject> promotionStack = new List<GameObject>();
 
     public List<List<short>> moves = new List<List<short>>();
-
+    public List<List<short>> movesMadeList = new List<List<short>>();
 
     //setting current player and gamestate values
-    private string currentTeam = "white";
+    private string currentTeam = "black";
     private bool whiteToMove = true;    
     private bool gameFinished = false;
     private bool isWhiteAI = true;
-    private bool isBlackAI = false;
+    private bool isBlackAI = true;
 
     public GameObject spawnPiece(string name, int x, int y)
     {
@@ -44,6 +44,14 @@ public class main : MonoBehaviour
         {
             piece.isAiControlled = true;
         }
+        if(piece.name.Contains("white") && this.GetComponent<aiController>().controllingBlack == true)
+        {
+            piece.isPlayerControlled = true;
+        }
+        else if(piece.name.Contains("black") && this.GetComponent<aiController>().controllingBlack == false)
+        {
+            piece.isPlayerControlled = true;
+        }
 
         piece.setBoardCoordinates(x,y);
         piece.Initialize();
@@ -51,7 +59,7 @@ public class main : MonoBehaviour
     }
 
     //Code for making and unmaking moves - using this encoding table https://www.chessprogramming.org/Encoding_Moves
-    void makeMove(List<short> moveId)
+    public void makeMove(List<short> moveId)
     {
         short fromSquare = moveId[0];
         short toSquare = moveId[1];
@@ -59,57 +67,70 @@ public class main : MonoBehaviour
         short capture = moveId[3];
         short special1 = moveId[4];
         short special2 = moveId[5];
+        //Debug.Log("MAKING MOVE FROM: " + fromSquare + " TO " + toSquare);
         
         //converting the short number into grid positions
-        GameObject fromObj = gridPositions[fromSquare / 8, fromSquare % 8];
+        GameObject fromObj = gridPositions[fromSquare % 8, fromSquare / 8];
         //Can be null - be careful
-        GameObject toObj = gridPositions[toSquare / 8, toSquare % 8];
+        GameObject toObj = gridPositions[toSquare % 8, toSquare / 8];
 
         //Quiet move
         if(promotion + capture + special1 + special2 == 0)
         {
-            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
-            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+            gridPositions[toSquare % 8, toSquare / 8] = fromObj;
+            setPositionEmpty(fromSquare % 8, fromSquare / 8);
+            //Debug.Log(gridPositions[toSquare % 8, toSquare / 8].name);
+            //if(gridPositions[fromSquare % 8, fromSquare / 8] == null){Debug.Log("MOVE MADE CORRECTLY");}
         }
 
         //Double pawn push
         if(promotion + capture + special1 == 0 && special2 == 1)
         {
-            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
-            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+            Debug.Log("Double pawn push TELEMETRY: ");
+            if(gridPositions[toSquare % 8, toSquare / 8] == null)
+            {
+                Debug.Log("TOSQUARE IS GOOD TO RECIEVE MOVE");
+            }
+            else
+            {
+                Debug.Log("ERROR, PAWN IS MOVING TO OCCUPIED SPACE");
+            }
+            gridPositions[toSquare % 8, toSquare / 8] = fromObj;
+            setPositionEmpty(fromSquare % 8, fromSquare / 8);
+            fromObj.GetComponent<chessPiece>().hasMovedDouble = true;
         }
 
         //capture
         if(promotion == 0 && capture == 1 && special1 + special2 == 0)
         {
             //Adding the taken piece to the buffer so it can be reversed later
-            takenStack.Add(gridPositions[toSquare / 8, toSquare % 8]);
-            setPositionEmpty(toSquare / 8, toSquare % 8);
+            takenStack.Add(gridPositions[toSquare % 8, toSquare / 8]);
+            setPositionEmpty(toSquare % 8, toSquare / 8);
 
-            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
-            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+            gridPositions[toSquare % 8, toSquare / 8] = fromObj;
+            setPositionEmpty(fromSquare % 8, fromSquare / 8);
         }
         //castling
         //Kingside
         if(promotion + capture == 0 && special1 == 1 && special2 == 0)
         { 
-            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-            setPositionEmpty(toSquare / 8, toSquare % 8);
+            gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+            setPositionEmpty(toSquare % 8, toSquare / 8);
             toSquare -= 1;
             fromSquare += 1;
-            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+            gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+            gridPositions[toSquare % 8, toSquare / 8] = fromObj;
         }
         //Queenside
         else if(promotion + capture == 0 && special1 + special2 == 2)
         {
-            setPositionEmpty(toSquare / 8, toSquare % 8);
-            setPositionEmpty(fromSquare / 8, fromSquare % 8);
+            setPositionEmpty(toSquare % 8, toSquare / 8);
+            setPositionEmpty(fromSquare % 8, fromSquare / 8);
 
             toSquare += 2;
             fromSquare -= 1;
-            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-            gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+            gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+            gridPositions[toSquare % 8, toSquare / 8] = fromObj;
         }
         //EP capture
         else if(promotion == 0 && capture == 1 && special1 == 0 && special2 == 1)
@@ -120,19 +141,19 @@ public class main : MonoBehaviour
                 if(toSquare == fromSquare - 7)
                 {
                     //EP in the square one positive to the black pawn
-                    takenStack.Add(gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8]);
-                    setPositionEmpty((fromSquare + 1) / 8, (fromSquare + 1) % 8);
+                    takenStack.Add(gridPositions[(fromSquare + 1) % 8, (fromSquare + 1) / 8]);
+                    setPositionEmpty((fromSquare + 1) % 8, (fromSquare + 1) / 8);
 
-                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                    gridPositions[toSquare % 8, toSquare / 8] = fromObj;
                 }
                 else
                 {
                     //EP in the square one negative to the black pawn
-                    takenStack.Add(gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8]);
-                    setPositionEmpty((fromSquare - 1) / 8, (fromSquare - 1) % 8);
-                    setPositionEmpty(fromSquare / 8, fromSquare % 8);
+                    takenStack.Add(gridPositions[(fromSquare - 1) % 8, (fromSquare - 1) / 8]);
+                    setPositionEmpty((fromSquare - 1) % 8, (fromSquare - 1) / 8);
+                    setPositionEmpty(fromSquare % 8, fromSquare / 8);
 
-                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                    gridPositions[toSquare % 8, toSquare / 8] = fromObj;
                 }
             }
             else
@@ -140,19 +161,19 @@ public class main : MonoBehaviour
                 //White EP
                 if(toSquare == fromSquare + 7)
                 {
-                    takenStack.Add(gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8]);
-                    setPositionEmpty((fromSquare - 1) / 8, (fromSquare - 1) % 8);
-                    setPositionEmpty(fromSquare / 8, fromSquare % 8);
+                    takenStack.Add(gridPositions[(fromSquare - 1) % 8, (fromSquare - 1) / 8]);
+                    setPositionEmpty((fromSquare - 1) % 8, (fromSquare - 1) / 8);
+                    setPositionEmpty(fromSquare % 8, fromSquare / 8);
 
-                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                    gridPositions[toSquare % 8, toSquare / 8] = fromObj;
                 }
                 else
                 {
-                    takenStack.Add(gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8]);
-                    setPositionEmpty((fromSquare + 1) / 8, (fromSquare + 1) % 8);
-                    setPositionEmpty(fromSquare / 8, fromSquare % 8);
+                    takenStack.Add(gridPositions[(fromSquare + 1) % 8, (fromSquare + 1) / 8]);
+                    setPositionEmpty((fromSquare + 1) % 8, (fromSquare + 1) / 8);
+                    setPositionEmpty(fromSquare % 8, fromSquare / 8);
 
-                    gridPositions[toSquare / 8, toSquare % 8] = fromObj;
+                    gridPositions[toSquare % 8, toSquare / 8] = fromObj;
                 }
             }
         }
@@ -170,27 +191,27 @@ public class main : MonoBehaviour
             {
                 teamName = "black";
             }
-            promotionStack.Add(gridPositions[fromSquare / 8, fromSquare % 8]);
-            setPositionEmpty(fromSquare / 8, fromSquare % 8);            
+            promotionStack.Add(gridPositions[fromSquare % 8, fromSquare / 8]);
+            setPositionEmpty(fromSquare % 8, fromSquare / 8);            
             //Knight promotion
             if(special1 + special2 == 0)
             {
-                spawnPiece((teamName + "Knight"), toSquare / 8, toSquare % 8);
+                spawnPiece((teamName + "Knight"), toSquare % 8, toSquare / 8);
             }
             //Bishop promotion
             else if(special1 == 0 && special2 == 1)
             {
-                spawnPiece((teamName + "Bishop"), toSquare / 8, toSquare % 8);                
+                spawnPiece((teamName + "Bishop"), toSquare % 8, toSquare / 8);                
             }
             //Rook promotion
             else if(special1 == 1 && special2 == 0)
             {
-                spawnPiece((teamName + "Rook"), toSquare / 8, toSquare % 8);
+                spawnPiece((teamName + "Rook"), toSquare % 8, toSquare / 8);
             }
             //Queen promotion
             else if(special1 + special2 == 2)
             {
-                spawnPiece((teamName + "Queen"), toSquare / 8, toSquare % 8);
+                spawnPiece((teamName + "Queen"), toSquare % 8, toSquare / 8);
             }
         }
         //CAPTURE PROMOTIONS
@@ -210,34 +231,46 @@ public class main : MonoBehaviour
 
             //Adding pieces to relevant storage stacks
             takenStack.Add(toObj);
-            setPositionEmpty(toSquare / 8, toSquare % 8);
-            promotionStack.Add(gridPositions[fromSquare / 8, fromSquare % 8]);
-            setPositionEmpty(fromSquare / 8, fromSquare % 8);   
+            setPositionEmpty(toSquare % 8, toSquare / 8);
+            promotionStack.Add(gridPositions[fromSquare % 8, fromSquare / 8]);
+            setPositionEmpty(fromSquare % 8, fromSquare / 8);   
 
             //Knight promotion
             if(special1 + special2 == 0)
             {
-                spawnPiece((teamName + "Knight"), toSquare / 8, toSquare % 8);
+                spawnPiece((teamName + "Knight"), toSquare % 8, toSquare / 8);
             }
             //Bishop promotion
             else if(special1 == 0 && special2 == 1)
             {
-                spawnPiece((teamName + "Bishop"), toSquare / 8, toSquare % 8);                 
+                spawnPiece((teamName + "Bishop"), toSquare % 8, toSquare / 8);                 
             }
             //Rook promotion
             else if(special1 == 1 && special2 == 0)
             {
-                spawnPiece((teamName + "Rook"), toSquare / 8, toSquare % 8);
+                spawnPiece((teamName + "Rook"), toSquare % 8, toSquare / 8);
             }
             //Queen promotion
             else if(special1 + special2 == 2)
             {
-                spawnPiece((teamName + "Queen"), toSquare / 8, toSquare % 8);
+                spawnPiece((teamName + "Queen"), toSquare % 8, toSquare / 8);
             }
         }
+
+        //ACTUALLY UPDATE PIECE POSITION ON BOARD
+
+        fromObj.GetComponent<chessPiece>().setBoardX(toSquare % 8);
+        fromObj.GetComponent<chessPiece>().setBoardY(toSquare / 8);
+
+        gridPositions[toSquare % 8, toSquare / 8].GetComponent<chessPiece>().setCoordinates();
+        setPosition(fromObj);
+
+
+
+
     }    
 
-    void unMakeMove(List<short> moveId)
+    public void unMakeMove(List<short> moveId)
     {
         short fromSquare = moveId[0];
         short toSquare = moveId[1];
@@ -246,6 +279,8 @@ public class main : MonoBehaviour
         short special1 = moveId[4];
         short special2 = moveId[5];
 
+        //Debug.Log("UNMAKING MOVE FROM: " + toSquare + " TO " + fromSquare);
+
         //fuck my life i dont wanna make this fucking method not one bit
         //PLEASE REMEMBER IN THE UNMAKE METHOD - TOSQUARE IS THE SQUARE THAT WAS MOVED TO BEFORE, NOW BECOMING THE FROMSQUARE
 
@@ -253,22 +288,23 @@ public class main : MonoBehaviour
 
         //fromObj is basically now the toObj
         //converting the short number into grid positions
-        GameObject fromObj = gridPositions[fromSquare / 8, fromSquare % 8];
+        GameObject fromObj = gridPositions[fromSquare % 8, fromSquare / 8];
         //Can be null - be careful
-        GameObject toObj = gridPositions[toSquare / 8, toSquare % 8];
+        GameObject toObj = gridPositions[toSquare % 8, toSquare / 8];
 
         //Quiet move
         if(promotion + capture + special1 + special2 == 0)
         {
-            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-            setPositionEmpty(toSquare / 8, toSquare % 8);
+            gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+            setPositionEmpty(toSquare % 8, toSquare / 8);
         }
 
         //Double pawn push
         if(promotion + capture + special1 == 0 && special2 == 1)
         {
-            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-            setPositionEmpty(toSquare / 8, toSquare % 8);
+            fromObj.GetComponent<chessPiece>().hasMovedDouble = false;
+            gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+            setPositionEmpty(toSquare % 8, toSquare / 8);
         }
 
         //capture
@@ -276,32 +312,32 @@ public class main : MonoBehaviour
         {
             //Adding the taken piece to the buffer so it can be reversed later
             //Get most recently added item to the taken stack and set it to the toSquare 
-            gridPositions[toSquare / 8, toSquare % 8] = takenStack[^1];
+            gridPositions[toSquare % 8, toSquare / 8] = takenStack[^1];
             takenStack.Remove(takenStack[^1]);      
-            gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
+            gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
         }
         //castling
         //Kingside
         if(promotion + capture == 0 && special1 == 1 && special2 == 0)
         {
             //Setting king back to original location
-            gridPositions[fromSquare / 8, fromSquare % 8] = gridPositions[(toSquare - 1) / 8, (toSquare - 1) % 8]; 
-            setPositionEmpty((toSquare - 1) / 8, (toSquare - 1) % 8);
+            gridPositions[fromSquare % 8, fromSquare / 8] = gridPositions[(toSquare - 1) % 8, (toSquare - 1) / 8]; 
+            setPositionEmpty((toSquare - 1) % 8, (toSquare - 1) / 8);
             
             //Setting rook back to original location
-            gridPositions[toSquare / 8, toSquare % 8] = gridPositions[(toSquare - 2) / 8, (toSquare - 2) % 8];
-            setPositionEmpty((toSquare - 2) / 8, (toSquare - 2) % 8);
+            gridPositions[toSquare % 8, toSquare / 8] = gridPositions[(toSquare - 2) % 8, (toSquare - 2) / 8];
+            setPositionEmpty((toSquare - 2) % 8, (toSquare - 2) / 8);
         }
         //Queenside
         else if(promotion + capture == 0 && special1 + special2 == 2)
         {
             //Setting king back to original location
-            gridPositions[fromSquare / 8, fromSquare % 8] = gridPositions[(toSquare - 2) / 8, (toSquare - 2) % 8];
+            gridPositions[fromSquare % 8, fromSquare / 8] = gridPositions[(toSquare - 2) % 8, (toSquare - 2) / 8];
             setPositionEmpty((toSquare - 2) / 8, (toSquare - 2) % 8);
             
             //Setting rook back to original location
-            gridPositions[toSquare / 8, toSquare % 8] = gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8];
-            setPositionEmpty((fromSquare - 1) / 8, (fromSquare - 1) % 8);
+            gridPositions[toSquare % 8, toSquare / 8] = gridPositions[(fromSquare - 1) % 8, (fromSquare - 1) / 8];
+            setPositionEmpty((fromSquare - 1) % 8, (fromSquare - 1) / 8);
         }
 
         //ENPASSANT REVERSAL - NO IDEA HOW IM GONNA DO THIS
@@ -313,12 +349,12 @@ public class main : MonoBehaviour
                 if(toSquare == fromSquare - 7)
                 {
                     //Taking the pawn off of the stack and replacing it on the board - 
-                    gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8] = takenStack[^1];
+                    gridPositions[(fromSquare + 1) % 8, (fromSquare + 1) / 8] = takenStack[^1];
                     takenStack.Remove(takenStack[^1]); 
 
                     //Moving the attacking pawn back to where it was previously
-                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                    gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+                    setPositionEmpty(toSquare % 8, toSquare / 8);
                 }
                 else
                 {
@@ -326,8 +362,8 @@ public class main : MonoBehaviour
                     gridPositions[(fromSquare - 1) / 8, (fromSquare - 1)] = takenStack[^1];
                     takenStack.Remove(takenStack[^1]);
                     
-                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                    gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+                    setPositionEmpty(toSquare % 8, toSquare / 8);
                 }
             }
             else
@@ -335,40 +371,49 @@ public class main : MonoBehaviour
                 //White EP
                 if(toSquare == fromSquare + 7)
                 {
-                    gridPositions[(fromSquare - 1) / 8, (fromSquare - 1) % 8] = takenStack[^1];
+                    gridPositions[(fromSquare - 1) % 8, (fromSquare - 1) / 8] = takenStack[^1];
                     takenStack.Remove(takenStack[^1]);
 
-                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                    gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+                    setPositionEmpty(toSquare % 8, toSquare / 8);
                 }
                 else
                 {
-                    gridPositions[(fromSquare + 1) / 8, (fromSquare + 1) % 8] = takenStack[^1];
+                    gridPositions[(fromSquare + 1) % 8, (fromSquare + 1) / 8] = takenStack[^1];
                     takenStack.Remove(takenStack[^1]); 
 
                     //Moving the attacking pawn back to where it was previously
-                    gridPositions[fromSquare / 8, fromSquare % 8] = toObj;
-                    setPositionEmpty(toSquare / 8, toSquare % 8);
+                    gridPositions[fromSquare % 8, fromSquare / 8] = toObj;
+                    setPositionEmpty(toSquare % 8, toSquare / 8);
                 }
             }
         }
         //PROMOTIONS    
         if(promotion == 1 && capture == 0)
         {
-            setPositionEmpty(toSquare / 8, toSquare % 8);
-            gridPositions[fromSquare / 8, fromSquare % 8] = promotionStack[^1];
+            setPositionEmpty(toSquare % 8, toSquare / 8);
+            gridPositions[fromSquare % 8, fromSquare / 8] = promotionStack[^1];
             promotionStack.Remove(promotionStack[^1]);
         }
         //CAPTURE PROMOTIONS
         else if(promotion == 1 && capture == 1)
         {
-            setPositionEmpty(toSquare / 8, toSquare % 8);
-            gridPositions[fromSquare / 8, fromSquare % 8] = promotionStack[^1];
+            setPositionEmpty(toSquare % 8, toSquare / 8);
+            gridPositions[fromSquare % 8, fromSquare / 8] = promotionStack[^1];
             promotionStack.Remove(promotionStack[^1]);
 
-            gridPositions[toSquare / 8, toSquare % 8] = takenStack[^1];
+            gridPositions[toSquare % 8, toSquare / 8] = takenStack[^1];
             takenStack.Remove(takenStack[^1]);
         }
+
+        //ACTUALLY UPDATE PIECE POSITION ON BOARD
+        toObj.GetComponent<chessPiece>().setBoardX(fromSquare % 8);
+        toObj.GetComponent<chessPiece>().setBoardY(fromSquare / 8);
+
+        gridPositions[fromSquare % 8, fromSquare / 8].GetComponent<chessPiece>().setCoordinates();
+        setPosition(toObj);
+
+
     }
 
     //set the positions of the pieces
@@ -407,8 +452,9 @@ public class main : MonoBehaviour
     }
 
     //Changing which team gets to move based on whomevers turn it is
-    public void nextTurn()
+    public void nextTurn(bool gamestateChange = false)
     {
+
         if(currentTeam == "white")
         {
             currentTeam = "black";
@@ -418,6 +464,12 @@ public class main : MonoBehaviour
         {
             currentTeam = "white";
             whiteToMove = true; 
+        }
+
+        if(gamestateChange)
+        {
+            Debug.Log("NEXT TURN");
+            this.GetComponent<aiController>().initiateAIMove();
         }
     }
 
@@ -464,6 +516,24 @@ public class main : MonoBehaviour
             spawnPiece("blackPawn", i,6);
         }
     }
+
+
+    public void generateMoves()
+    {
+        Debug.Log("moves list is about to be cleared completely");
+        moves.Clear();
+        for(int i = 0; i < gridPositions.Length; i++)
+        {
+            //Generate moves for given piece
+            if(gridPositions[i % 8, i / 8] != null)
+            {
+                if(gridPositions[i % 8, i / 8].GetComponent<chessPiece>().getTeam() == currentTeam){gridPositions[i % 8, i / 8].GetComponent<chessPiece>().onMouseUpScript(true);}
+            }
+        }
+    }
+
+
+
     void Start()
     {
         // instantiating the pieces
@@ -493,6 +563,7 @@ public class main : MonoBehaviour
         //Initialize a.i controller
         this.GetComponent<aiController>().Initialize();
 
+        
     }
 
 }
