@@ -9,6 +9,7 @@ public class main : MonoBehaviour
     public GameObject chessPiece;
     //Giving the board grid locations for each piece
     public GameObject[,] gridPositions = new GameObject[8,8];
+    public int[,] intGridPositions = new int[8,8];
 
     //setting up arrays to store the different teams pieces
     private GameObject[] playerBlack = new GameObject[16];
@@ -33,7 +34,7 @@ public class main : MonoBehaviour
         GameObject obj = Instantiate(chessPiece, new Vector3(0,0,-1), Quaternion.identity);
         chessPiece piece = obj.GetComponent<chessPiece>();
         piece.name = name;
-        piece.tag = name;
+        //piece.tag = name;
 
         //If the piece is controlled by ai, make sure the class is aware
         if (piece.name.Contains("white") && isWhiteAI)
@@ -58,8 +59,49 @@ public class main : MonoBehaviour
         return obj;
     }
 
+    // public int[,] assignIntGridPositions(GameObject[,] GP)
+    // {
+    //     int[,] tempNumPositions = new int[8,8];
+    //     for(int i = 0; i < GP.Length; i++)
+    //     {
+    //         if(GP[i % 8, i / 8] != null)
+    //         {
+    //             switch(GP[i % 8, i / 8].name)
+    //             {
+    //                 case "whiteKing": tempNumPositions[i % 8, i / 8] = 1; break;
+    //                 case "whiteQueen": tempNumPositions[i % 8, i / 8] = 3; break;
+    //                 case "whitePawn": tempNumPositions[i % 8, i / 8] = 5; break;
+    //                 case "whiteRook": tempNumPositions[i % 8, i / 8] = 7; break;
+    //                 case "whiteBishop": tempNumPositions[i % 8, i / 8] = 9; break;
+    //                 case "whiteKnight": tempNumPositions[i % 8, i / 8] = 11; break;
+
+    //                 case "blackKing": tempNumPositions[i % 8, i / 8] = 2; break;
+    //                 case "blackQueen": tempNumPositions[i % 8, i / 8] = 4; break;
+    //                 case "blackPawn": tempNumPositions[i % 8, i / 8] = 6; break;
+    //                 case "blackRook": tempNumPositions[i % 8, i / 8] = 8; break;
+    //                 case "blackBishop": tempNumPositions[i % 8, i / 8] = 10; break;
+    //                 case "blackKnight": tempNumPositions[i % 8, i / 8] = 12; break;
+    //             }
+    //         }
+    //         else
+    //         {
+    //             tempNumPositions[i % 8, i / 8] = 0;
+    //         }
+    //     }
+
+    //     return tempNumPositions;
+    // }
+
+
+//
+    public void synchroniseRefBoard(int[,] intPositions)
+    {
+        GameObject[,] tempGridPositions = new GameObject[8,8];
+    }
+
+
     //Code for making and unmaking moves - using this encoding table https://www.chessprogramming.org/Encoding_Moves
-    public void makeMove(List<short> moveId)
+    public void makeMove(List<short> moveId, bool finalMove = false)
     {
         short fromSquare = moveId[0];
         short toSquare = moveId[1];
@@ -97,7 +139,9 @@ public class main : MonoBehaviour
             }
             gridPositions[toSquare % 8, toSquare / 8] = fromObj;
             setPositionEmpty(fromSquare % 8, fromSquare / 8);
+            Debug.Log("instigating double pawn push");
             fromObj.GetComponent<chessPiece>().hasMovedDouble = true;
+            
         }
 
         //capture
@@ -264,7 +308,9 @@ public class main : MonoBehaviour
 
         gridPositions[toSquare % 8, toSquare / 8].GetComponent<chessPiece>().setCoordinates();
         setPosition(fromObj);
-
+        movesMadeList.Add(moveId);
+        fromObj.GetComponent<chessPiece>().setHasMoved(true);
+        Debug.Log("fake move has been made from: " + fromSquare + " to: " + toSquare);
 
 
 
@@ -412,7 +458,7 @@ public class main : MonoBehaviour
 
         gridPositions[fromSquare % 8, fromSquare / 8].GetComponent<chessPiece>().setCoordinates();
         setPosition(toObj);
-
+        Debug.Log("Fake move has been unmade");
 
     }
 
@@ -562,7 +608,6 @@ public class main : MonoBehaviour
 
         //Initialize a.i controller
         this.GetComponent<aiController>().Initialize();
-
         
     }
 

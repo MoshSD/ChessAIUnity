@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5640889073768071125}
   m_Layer: 0
   m_Name: piece
-  m_TagString: Untagged
+  m_TagString: chessPiece
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -100,6 +100,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boardController: {fileID: 0}
   moveIndicator: {fileID: 614505609846194629, guid: c2f74f54998d4344c8477d60293a0404, type: 3}
+  isAiControlled: 0
+  isPlayerControlled: 0
+  hasMovedDouble: 0
+  movesGeneratedForPiece: 0
   whiteKing: {fileID: 21300000, guid: d202c13f18899c649bbb1780d5f2e46f, type: 3}
   whiteQueen: {fileID: 21300000, guid: 229730db262f0a7468131aa55892b8af, type: 3}
   whiteBishop: {fileID: 21300000, guid: 52cb4c331e104f44ab8d8c8a163fbb8d, type: 3}

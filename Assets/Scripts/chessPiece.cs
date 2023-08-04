@@ -32,6 +32,8 @@ public class chessPiece : MonoBehaviour
     public bool isPlayerControlled = false;
     public bool hasMovedDouble = false;
 
+    public bool currentMoveIsAI = false;
+
     List<short> currentMove = new List<short>();
 
     public int movesGeneratedForPiece = 0;
@@ -63,7 +65,7 @@ public class chessPiece : MonoBehaviour
     //Determining whether the last move was double -- accessible publicly
     public void setHasMovedDouble(bool move)
     {
-        hasMovedDouble = move;
+        lastMoveWasDouble = move;
     }
 
     public string getTeam()
@@ -103,12 +105,13 @@ public class chessPiece : MonoBehaviour
     }
     //===========================================================
 
-    //Func for spawning the movement indicators for each piece                      +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
+    //Func for spawning the movement indicators for each piece          +++++++++++++ CAN BE OPTIMISED TO INCLUDE ATTACKING AS WELL RATHER THAN USING SEPERATE FUNC +++++++++++++  
     public void moveIndicatorSpawn(int boardMatrixX, int boardMatrixY, bool isMoveDouble = false, string castleSide = "null", bool promotionMove = false)
     {
         //Adding to moves array
-        if(isAiControlled)
+        if(currentMoveIsAI)
         {
+            currentMove.Clear();
             short toVal = (short)((boardMatrixY * 8) + boardMatrixX);
             short fromVal = (short)((boardY * 8) + boardX); 
             short promoVal = 0;
@@ -128,7 +131,7 @@ public class chessPiece : MonoBehaviour
             currentMove.Add(attackVal);
             currentMove.Add(special1);
             currentMove.Add(special2);
-
+            Debug.Log("adding move for " + boardController.GetComponent<main>().getCurrentTeam());
             boardController.GetComponent<main>().moves.Add(currentMove);
         }
 
@@ -174,7 +177,7 @@ public class chessPiece : MonoBehaviour
     public void moveIndicatorAttackSpawn(int boardMatrixX, int boardMatrixY, bool enPassant = false, bool promotionMove = false)
     {
         //Adding to moves array
-        if(isAiControlled)
+        if(currentMoveIsAI)
         {
             short toVal = (short)((boardMatrixX * 8) + boardMatrixY);
             short fromVal = (short)((boardX * 8) + boardY); 
@@ -326,11 +329,11 @@ public class chessPiece : MonoBehaviour
             }
 
             //If the pawn has not moved, they are able to go two spaces forward instead of one
-            if(this.name == "blackPawn" && hasMovedDouble == false  && boardController.GetComponent<main>().gridPositions[x, y - 1] == null)
+            if(this.name == "blackPawn" && hasMoved == false && hasMovedDouble == false  && boardController.GetComponent<main>().gridPositions[x, y - 1] == null)
             {
                 moveIndicatorSpawn(x, y - 1, true);
             }
-            else if(this.name == "whitePawn" && hasMovedDouble == false && boardController.GetComponent<main>().gridPositions[x, y + 1] == null)
+            else if(this.name == "whitePawn" && hasMoved == false && hasMovedDouble == false && boardController.GetComponent<main>().gridPositions[x, y + 1] == null)
             {
                 moveIndicatorSpawn(x,y + 1, true);
             }
@@ -479,14 +482,18 @@ public class chessPiece : MonoBehaviour
     {
         if(initiatedByAI)
         {  
+            currentMoveIsAI = true;
             currentMove.Clear();
             initiateMoveIndicators();
             return;
         }
+        else
+        {
+            currentMoveIsAI = false;
+        }
         //Is the piece that has been clicked on a part of the team that is currently playing?
         if(!boardController.GetComponent<main>().isGameOver() && boardController.GetComponent<main>().getCurrentTeam() == team)
         {
-            Debug.Log("FART FART FART FART FART ");
             destroyMoveIndicators();
             initiateMoveIndicators();
         }

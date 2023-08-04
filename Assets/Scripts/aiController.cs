@@ -16,9 +16,6 @@ public class aiController : MonoBehaviour
     public bool aiTurnActive = false;
 
     public List<short> bestMove = new List<short>();
-
-    
-
     int movesMade = 0;
     int movesUnmade = 0;
 
@@ -44,6 +41,7 @@ public class aiController : MonoBehaviour
         }
         
         //Generate moves for CURRENT team
+        Debug.Log("Generating moves");
         boardController.GetComponent<main>().generateMoves();
         List<List<short>> movesInternal = boardController.GetComponent<main>().moves;
 
@@ -53,8 +51,10 @@ public class aiController : MonoBehaviour
             return 0;
         }
         bestMove = null;
-        foreach(List<short> move in movesInternal)
+        foreach(List<short> move in movesInternal.ToArray())
         {
+            //int[,] previousGridIntPositions = new int[8,8];
+            //previousGridIntPositions = boardController.GetComponent<main>().assignIntGridPositions(boardController.GetComponent<main>().gridPositions);
             //List<List<short>> tempMovesList = boardController.GetComponent<main>().moves;
             //Debug.Log("MAKING A MOVE");
             if(move[3] == 1){Debug.Log("THIS MOVE IS AN ATTACK: " + move[0] + move[1]);}
@@ -62,7 +62,8 @@ public class aiController : MonoBehaviour
             boardController.GetComponent<main>().nextTurn();
             movesMade++;
             int evaluation = -Search(depth - 1, -beta, -alpha);
-            boardController.GetComponent<main>().unMakeMove(move);
+            boardController.GetComponent<main>().unMakeMove(boardController.GetComponent<main>().movesMadeList[^1]);
+            //RestoreStateFromSnapshot(previousGridIntPositions);
             //boardController.GetComponent<main>().generateMoves();
             //boardController.GetComponent<main>().nextTurn();
             movesUnmade++;
@@ -128,6 +129,49 @@ public class aiController : MonoBehaviour
         return material;
     }
 
+
+    public void RestoreStateFromSnapshot(int[,] snapShot)
+    {
+        // Clear the current chessboard
+        boardController.GetComponent<main>().gridPositions = new GameObject[8,8];
+        GameObject[] objectsToBeCleaned = GameObject.FindGameObjectsWithTag("chessPiece");
+        for(int i = 0; i < objectsToBeCleaned.Length; i++)
+        {
+           Destroy(objectsToBeCleaned[i]);
+        }
+
+        // Restore the positions and types of the chess pieces from the snapshot
+        for (int i = 0; i < snapShot.Length; i++)
+        {
+            if(snapShot[i % 8, i / 8] != 0)
+            {
+                string tempName = "null";
+                switch(snapShot[i % 8, i / 8])
+                {
+                    //pawns first as most common
+                    case 5 : tempName = "whitePawn"; break;
+                    case 6 : tempName = "blackPawn"; break;
+
+                    case 1 : tempName = "whiteKing"; break;
+                    case 2 : tempName = "blackKing"; break;
+                    case 3 : tempName = "whiteQueen"; break;
+                    case 4 : tempName = "blackQueen"; break;
+                    case 7 : tempName = "whiteRook"; break;
+                    case 8 : tempName = "blackRook"; break;
+                    case 9 : tempName = "whiteBishop"; break;
+                    case 10 : tempName = "blackBishop"; break;
+                    case 11 : tempName = "whiteKnight"; break;
+                    case 12 : tempName = "blackKnight"; break;
+                }
+                boardController.GetComponent<main>().gridPositions[i % 8, i / 8] = boardController.GetComponent<main>().spawnPiece(tempName, i % 8, i / 8);                
+            }
+        }
+    }
+
+
+
+
+
     public void Initialize()
     {
         boardController = GameObject.FindGameObjectWithTag("GameController");
@@ -137,6 +181,11 @@ public class aiController : MonoBehaviour
     public void initiateAIMove()
     {
         aiTurnActive = true;
+        //int[,] intGridPositions = boardController.GetComponent<main>().assignIntGridPositions(boardController.GetComponent<main>().gridPositions);
+        // for(int i = 0; i < intGridPositions.Length; i++)
+        // {
+        //     Debug.Log("peice number is: " + intGridPositions[i % 8, i / 8]);
+        // }
         Debug.Log("Current white evaluation: " + Search(1,-999999999,999999999));
         Debug.Log("Finalizing move");
         boardController.GetComponent<main>().makeMove(bestMove);

@@ -132,7 +132,7 @@ public class moveIndicator : MonoBehaviour
             controller.GetComponent<main>().setPosition(rookRef);
 
         }
-        else
+        
         //Setting the moved pieces new location after the move has occurred
         pieceReference.GetComponent<chessPiece>().setBoardX(boardMatrixX);
         pieceReference.GetComponent<chessPiece>().setBoardY(boardMatrixY);
